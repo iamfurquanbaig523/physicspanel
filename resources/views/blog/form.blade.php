@@ -388,7 +388,7 @@
                 .block-myth { border-color: rgba(255, 107, 107, 0.3); } .block-myth::before { content: "✖ MYTH"; color: #FF6B6B; }
                 .block-problem { border-color: rgba(231, 76, 60, 0.3); } .block-problem::before { content: "⚠ PROBLEM"; color: #E74C3C; }
                 .block-equation { border-color: rgba(0, 255, 136, 0.45); background: #0D0D0D; box-shadow: inset 0 0 0 1px rgba(0, 255, 136, 0.08); color: #00FF88; font-family: 'DM Mono', monospace; overflow-x: auto; }
-                .block-equation::before { content: "FORMULA"; color: #00FF88; }
+                .block-equation::before { content: ""; display: none; }
                 .block-equation, .block-equation p, .block-equation div, .block-equation span, .block-equation code, .block-equation pre { color: #00FF88 !important; font-family: 'DM Mono', monospace !important; }
                 .block-equation p, .block-equation div { line-height: 1.8; }
             `;
@@ -398,7 +398,7 @@
                 height: 440,
                 menubar: false,
                 plugins: 'lists link table code wordcount',
-                toolbar: 'undo redo | styles | bold italic | bullist numlist | link table | equationBlock | removeformat | code',
+                toolbar: 'undo redo | styles | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist | link table | equationBlock | removeformat | code',
                 formats: {
                     equationBlock: { block: 'div', classes: 'custom-block block-equation', wrapper: true }
                 },
