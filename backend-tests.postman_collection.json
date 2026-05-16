@@ -1,0 +1,418 @@
+{
+    "info": {
+        "name": "Search Engine Basics Academy API Tests",
+        "description": "Tests for public API endpoints",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "GET Settings",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "http://127.0.0.1:8000/api/site/settings",
+                    "protocol": "http",
+                    "host": ["127", "0", "0", "1"],
+                    "port": "8000",
+                    "path": ["api", "site", "settings"]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "pm.test(\"Response has data object\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.error).to.eql(false);",
+                            "    pm.expect(jsonData.data).to.be.an('object');",
+                            "});"
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "name": "GET Blogs",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "http://127.0.0.1:8000/api/site/blogs",
+                    "protocol": "http",
+                    "host": ["127", "0", "0", "1"],
+                    "port": "8000",
+                    "path": ["api", "site", "blogs"]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "pm.test(\"Response has data paginator\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.error).to.eql(false);",
+                            "    pm.expect(jsonData.data.data).to.be.an('array');",
+                            "    if (jsonData.data.data.length > 0) {",
+                            "        pm.collectionVariables.set('blog_slug', jsonData.data.data[0].slug);",
+                            "    }",
+                            "});"
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "name": "GET Single Blog",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "http://127.0.0.1:8000/api/site/blogs/{{blog_slug}}",
+                    "protocol": "http",
+                    "host": ["127", "0", "0", "1"],
+                    "port": "8000",
+                    "path": ["api", "site", "blogs", "{{blog_slug}}"]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "var slug = pm.collectionVariables.get('blog_slug');",
+                            "if (slug) {",
+                            "    pm.test(\"Status code is 200\", function () {",
+                            "        pm.response.to.have.status(200);",
+                            "    });",
+                            "    pm.test(\"Response has data object\", function () {",
+                            "        var jsonData = pm.response.json();",
+                            "        pm.expect(jsonData.error).to.eql(false);",
+                            "        pm.expect(jsonData.data).to.be.an('object');",
+                            "    });",
+                            "} else {",
+                            "    console.log('Skipping because no blog_slug was found');",
+                            "}"
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "name": "GET Series",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "http://127.0.0.1:8000/api/site/series",
+                    "protocol": "http",
+                    "host": ["127", "0", "0", "1"],
+                    "port": "8000",
+                    "path": ["api", "site", "series"]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "pm.test(\"Response has data array\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.error).to.eql(false);",
+                            "    pm.expect(jsonData.data).to.be.an('array');",
+                            "});"
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "name": "GET Articles",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "http://127.0.0.1:8000/api/site/articles",
+                    "protocol": "http",
+                    "host": ["127", "0", "0", "1"],
+                    "port": "8000",
+                    "path": ["api", "site", "articles"]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "pm.test(\"Response has data paginator\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.error).to.eql(false);",
+                            "    pm.expect(jsonData.data.data).to.be.an('array');",
+                            "});"
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "name": "GET Authors",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "http://127.0.0.1:8000/api/site/authors",
+                    "protocol": "http",
+                    "host": ["127", "0", "0", "1"],
+                    "port": "8000",
+                    "path": ["api", "site", "authors"]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "pm.test(\"Response has data array\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.error).to.eql(false);",
+                            "    pm.expect(jsonData.data).to.be.an('array');",
+                            "    if (jsonData.data.length > 0) {",
+                            "        pm.collectionVariables.set('author_slug', jsonData.data[0].slug);",
+                            "    }",
+                            "});"
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "name": "GET Single Author",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "http://127.0.0.1:8000/api/site/authors/{{author_slug}}",
+                    "protocol": "http",
+                    "host": ["127", "0", "0", "1"],
+                    "port": "8000",
+                    "path": ["api", "site", "authors", "{{author_slug}}"]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "var slug = pm.collectionVariables.get('author_slug');",
+                            "if (slug) {",
+                            "    pm.test(\"Status code is 200\", function () {",
+                            "        pm.response.to.have.status(200);",
+                            "    });",
+                            "    pm.test(\"Response has data object\", function () {",
+                            "        var jsonData = pm.response.json();",
+                            "        pm.expect(jsonData.error).to.eql(false);",
+                            "        pm.expect(jsonData.data).to.be.an('object');",
+                            "    });",
+                            "} else {",
+                            "    console.log('Skipping because no author_slug was found');",
+                            "}"
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "name": "GET Search",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "http://127.0.0.1:8000/api/site/search?q=test",
+                    "protocol": "http",
+                    "host": ["127", "0", "0", "1"],
+                    "port": "8000",
+                    "path": ["api", "site", "search"],
+                    "query": [
+                        {
+                            "key": "q",
+                            "value": "test"
+                        }
+                    ]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "pm.test(\"Response has data array\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.error).to.eql(false);",
+                            "    pm.expect(jsonData.data.data).to.be.an('array');",
+                            "});"
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "name": "POST Contact",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"name\": \"Test User\",\n    \"email\": \"test@example.com\",\n    \"subject\": \"Test Subject\",\n    \"message\": \"This is a test message\"\n}"
+                },
+                "url": {
+                    "raw": "http://127.0.0.1:8000/api/site/contact",
+                    "protocol": "http",
+                    "host": ["127", "0", "0", "1"],
+                    "port": "8000",
+                    "path": ["api", "site", "contact"]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "pm.test(\"Response error is false\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.error).to.eql(false);",
+                            "});"
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "name": "POST Newsletter",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"email\": \"test_newsletter@example.com\"\n}"
+                },
+                "url": {
+                    "raw": "http://127.0.0.1:8000/api/site/newsletter",
+                    "protocol": "http",
+                    "host": ["127", "0", "0", "1"],
+                    "port": "8000",
+                    "path": ["api", "site", "newsletter"]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "pm.test(\"Response error is false\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.error).to.eql(false);",
+                            "});"
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "name": "POST Search Query",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"query\": \"test search query\"\n}"
+                },
+                "url": {
+                    "raw": "http://127.0.0.1:8000/api/site/search-query",
+                    "protocol": "http",
+                    "host": ["127", "0", "0", "1"],
+                    "port": "8000",
+                    "path": ["api", "site", "search-query"]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "pm.test(\"Response error is false\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.error).to.eql(false);",
+                            "});"
+                        ]
+                    }
+                }
+            ]
+        }
+    ],
+    "variable": [
+        {
+            "key": "blog_slug",
+            "value": ""
+        },
+        {
+            "key": "author_slug",
+            "value": ""
+        }
+    ]
+}
