@@ -583,6 +583,12 @@ class SearchEngineBasicsArticleSeeder extends Seeder
                 continue;
             }
 
+            $formulaMarkup = count($block) === 1 ? $this->formulaLineMarkup($text) : null;
+            if ($formulaMarkup !== null) {
+                $html .= '<div class="custom-block block-equation">'.$formulaMarkup.'</div>';
+                continue;
+            }
+
             $citationHtml = '';
             if (! $citationAdded && $citations !== []) {
                 $citationHtml = $this->citationRefs($articleNumber, $citations, $sources);
@@ -590,11 +596,7 @@ class SearchEngineBasicsArticleSeeder extends Seeder
                 $citationAdded = true;
             }
 
-            if (count($block) === 1 && $this->isFormulaLine($text)) {
-                $html .= '<div class="custom-block block-equation">'.$this->inline($text, true, $articleNumber, $linkedTopicTargets, $linkedArticleTargets, $articleReferenceTargets).$citationHtml.'</div>';
-            } else {
-                $html .= '<p>'.$this->inline($text, true, $articleNumber, $linkedTopicTargets, $linkedArticleTargets, $articleReferenceTargets).$citationHtml.'</p>';
-            }
+            $html .= '<p>'.$this->inline($text, true, $articleNumber, $linkedTopicTargets, $linkedArticleTargets, $articleReferenceTargets).$citationHtml.'</p>';
         }
 
         return $html;
@@ -1046,15 +1048,113 @@ class SearchEngineBasicsArticleSeeder extends Seeder
 
     private function isFormulaLine(string $line): bool
     {
-        if (! str_contains($line, '=')) {
-            return false;
+        return $this->formulaLineMarkup($line) !== null;
+    }
+
+    private function formulaLineMarkup(string $line): ?string
+    {
+        $plain = trim(preg_replace('/\s+/u', ' ', $line) ?? $line);
+        $plain = strtr($plain, [
+            "\u{00A0}" => ' ',
+            "\u{00B7}" => '*',
+            "\u{00D7}" => 'x',
+            "\u{2212}" => '-',
+            "\u{2013}" => '-',
+            "\u{2014}" => '-',
+            'Ã—' => 'x',
+            'Î»' => 'λ',
+            'Î”' => 'Δ',
+        ]);
+
+        if (preg_match('/^(?:BM25|TF-IDF)\s+scores\b/iu', $plain)) {
+            return null;
         }
 
-        if (str_word_count($line) > 18) {
-            return false;
+        if (preg_match('/^cosine similarity\s*=/iu', $plain)) {
+            return '\[\text{cosine similarity}=\frac{A\cdot B}{\lVert A\rVert\times\lVert B\rVert}\]';
         }
 
-        return (bool) preg_match('/(Σ|λ|Δ|log|BM25|TF|IDF|NDCG|DCG|MAP|MRR|PR\(|RR|AP|precision|recall|score)/iu', $line);
+        if (preg_match('/^BM25\(t\s*,\s*d\)\s*=/iu', $plain)) {
+            return '\[\mathrm{BM25}(t,d)=\mathrm{IDF}(t)\times\frac{\mathrm{TF}(t,d)(k_1+1)}{\mathrm{TF}(t,d)+k_1\left(1-b+b\frac{|d|}{\mathrm{avgdl}}\right)}\]';
+        }
+
+        if (preg_match('/^pseudo-?TF\(t\s*,\s*d\)\s*=/iu', $plain)) {
+            return '\[\mathrm{pseudoTF}(t,d)=\sum_f w_f\times\frac{\mathrm{TF}(t,f)}{\mathrm{lengthNorm}_f}\]';
+        }
+
+        if (preg_match('/^PR\(i\)\s*=/iu', $plain)) {
+            return '\[\mathrm{PR}(i)=\frac{1-d}{N}+d\sum_{j\in M(i)}\frac{\mathrm{PR}(j)}{L(j)}\]';
+        }
+
+        if (preg_match('/^authority\(i\)\s*=/iu', $plain)) {
+            return '\[\mathrm{authority}(i)=\sum_{j\to i}\mathrm{hub}(j)\]';
+        }
+
+        if (preg_match('/^hub\(i\)\s*=/iu', $plain)) {
+            return '\[\mathrm{hub}(i)=\sum_{i\to j}\mathrm{authority}(j)\]';
+        }
+
+        if (preg_match('/^(?:λ|lambda)_?ij\s*=/iu', $plain)) {
+            return '\[\lambda_{ij}=|\Delta\mathrm{NDCG}|\times\text{pairwise gradient}_{ij}^{\mathrm{RankNet}}\]';
+        }
+
+        if (preg_match('/^Precision\s*=/iu', $plain)) {
+            return '\[\mathrm{Precision}=\frac{\text{number of relevant documents retrieved}}{\text{total documents retrieved}}\]';
+        }
+
+        if (preg_match('/^Recall\s*=/iu', $plain)) {
+            return '\[\mathrm{Recall}=\frac{\text{number of relevant documents retrieved}}{\text{total relevant documents in collection}}\]';
+        }
+
+        if (preg_match('/^Precision@K\s*=/iu', $plain)) {
+            return '\[\mathrm{Precision@K}=\frac{\text{number of relevant documents in top }K\text{ positions}}{K}\]';
+        }
+
+        if (preg_match('/^AP\s*=\s*\(\s*1\s*\/\s*R\s*\)/iu', $plain)) {
+            return '\[\mathrm{AP}=\frac{1}{R}\sum_i \mathrm{Precision@K_i}\]';
+        }
+
+        if (preg_match('/^AP\s*=\s*\(\s*1\s*\/\s*4\s*\)/iu', $plain)) {
+            return '\[\mathrm{AP}=\frac{1}{4}(1.00+0.67+0.60+0.44)=\frac{1}{4}\times2.71=0.678\]';
+        }
+
+        if (str_contains($plain, 'MAP across both queries')) {
+            return '\[\mathrm{MAP}=\frac{0.678+0.510}{2}=0.594\]';
+        }
+
+        if (preg_match('/^RR\s*=/iu', $plain)) {
+            return '\[\mathrm{RR}=\frac{1}{\text{rank position of the first relevant result}}\]';
+        }
+
+        if (preg_match('/^MRR\s*=/iu', $plain)) {
+            return '\[\mathrm{MRR}=\frac{1.00+0.33+0.50}{3}=0.61\]';
+        }
+
+        if (preg_match('/^DCG@K\s*=/iu', $plain) && str_contains($plain, '2^')) {
+            return '\[\mathrm{DCG@K}=\sum_{i=1}^{K}\frac{2^{rel_i}-1}{\log_2(i+1)}\]';
+        }
+
+        if (preg_match('/^DCG@K\s*=/iu', $plain)) {
+            return '\[\mathrm{DCG@K}=\sum_{i=1}^{K}\frac{rel_i}{\log_2(i+1)}\]';
+        }
+
+        if (preg_match('/^NDCG@K\s*=/iu', $plain)) {
+            return '\[\mathrm{NDCG@K}=\frac{\mathrm{DCG@K}}{\mathrm{IDCG@K}}\]';
+        }
+
+        if (preg_match('/^DCG@5\s*=/iu', $plain)) {
+            return '\[\mathrm{DCG@5}=2.000+1.893+0.000+0.431+1.161=5.485\]';
+        }
+
+        if (preg_match('/^IDCG@5\s*=/iu', $plain)) {
+            return '\[\mathrm{IDCG@5}=3.000+1.893+1.000+0.431+0.000=6.324\]';
+        }
+
+        if (preg_match('/^NDCG@5\s*=/iu', $plain)) {
+            return '\[\mathrm{NDCG@5}=\frac{5.485}{6.324}=0.867\]';
+        }
+
+        return null;
     }
 
     private function extractMetaDescription(array $lines): ?string
