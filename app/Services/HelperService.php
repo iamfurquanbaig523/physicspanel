@@ -16,38 +16,47 @@ class HelperService
 {
     public static function changeEnv($updateData = []): bool
     {
-        if (count($updateData) > 0) {
-            // Read .env-file
-            $env = file_get_contents(base_path() . '/.env');
-            // Split string on every " " and write into array
-            //            $env = explode(PHP_EOL, $env);
-            $env = preg_split('/\r\n|\r|\n/', $env);
-            $env_array = [];
-            foreach ($env as $env_value) {
-                if (empty($env_value)) {
-                    // Add and Empty Line
-                    $env_array[] = '';
+        return self::changeEnvFile(base_path() . '/.env', $updateData);
+    }
 
-                    continue;
-                }
-
-                $entry = explode('=', $env_value, 2);
-                $env_array[$entry[0]] = $entry[0] . '="' . str_replace('"', '', $entry[1]) . '"';
-            }
-
-            foreach ($updateData as $key => $value) {
-                $env_array[$key] = $key . '="' . str_replace('"', '', $value) . '"';
-            }
-            // Turn the array back to a String
-            $env = implode("\n", $env_array);
-
-            // And overwrite the .env with the new data
-            file_put_contents(base_path() . '/.env', $env);
-
-            return true;
+    public static function changeEnvFile(string $path, array $updateData = []): bool
+    {
+        if (count($updateData) === 0 || ! is_file($path) || ! is_writable($path)) {
+            return false;
         }
 
-        return false;
+        $env = file_get_contents($path);
+        $lines = preg_split('/\r\n|\r|\n/', $env === false ? '' : $env);
+        $nextLines = [];
+        $seen = [];
+
+        foreach ($lines as $line) {
+            if (trim($line) === '' || str_starts_with(ltrim($line), '#') || ! str_contains($line, '=')) {
+                $nextLines[] = $line;
+                continue;
+            }
+
+            [$key] = explode('=', $line, 2);
+            if (array_key_exists($key, $updateData)) {
+                $nextLines[] = $key . '="' . str_replace('"', '', (string) $updateData[$key]) . '"';
+                $seen[$key] = true;
+                continue;
+            }
+
+            $nextLines[] = $line;
+        }
+
+        foreach ($updateData as $key => $value) {
+            if (isset($seen[$key])) {
+                continue;
+            }
+
+            $nextLines[] = $key . '="' . str_replace('"', '', (string) $value) . '"';
+        }
+
+        file_put_contents($path, implode("\n", $nextLines));
+
+        return true;
     }
 
     /**

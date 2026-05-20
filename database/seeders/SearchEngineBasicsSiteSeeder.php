@@ -306,7 +306,7 @@ class SearchEngineBasicsSiteSeeder extends Seeder
                 : '/'.$blog->slug;
             $targetUrl = $siteUrl.$path;
 
-            foreach (['facebook', 'instagram', 'tiktok', 'whatsapp'] as $platform) {
+            foreach (['facebook', 'instagram', 'tiktok', 'whatsapp', 'link'] as $platform) {
                 ArticleShareLink::updateOrCreate(
                     ['blog_id' => $blog->id, 'platform' => $platform],
                     [
@@ -327,7 +327,7 @@ class SearchEngineBasicsSiteSeeder extends Seeder
                 'title' => 'About Search Engine Basics',
                 'slug' => 'about-us',
                 'excerpt' => 'Search Engine Basics is a free, structured guide library for understanding how search engines crawl, index, rank, and evaluate the web.',
-                'content' => '<p>Search Engine Basics teaches the machinery behind search in plain English without flattening the technical depth. The library is organized as article series, so readers can move from fundamentals to algorithms, metrics, entities, and practical SEO decisions in order.</p><p>Our contributors combine SEO education, software engineering, mathematical verification, machine learning review, pedagogy, and compliance oversight. That mix keeps the writing useful, technically grounded, and easier to update as search systems change.</p>',
+                'content' => '<p><strong>We teach you how search engines think, not just how to trick them.</strong></p><p>Most SEO content on the internet hands you a checklist. Put your keyword in the H1. Write a meta description under 160 characters. Get backlinks. Done.</p><p>But nobody explains why any of that works.</p><p>That\'s exactly the gap we built this site to fill.</p><h2>Who We Are</h2><p>We are a team of SEO practitioners, researchers, and educators who got tired of surface-level advice. We spent years studying how search engines actually work, the crawling, the indexing, the ranking signals, the algorithms — and we noticed something: people who understand the system never have to memorize tactics. The right moves become obvious.</p><p>So we built a place where that understanding comes first.</p><h2>What We Actually Teach</h2><p>Every piece of content on this site starts from the ground up. Before we tell you what to put in an H1 tag, we explain what an H1 tag actually communicates to a search engine and why it was designed that way. Before we talk about meta descriptions, we show you how a search result page works and what job the description is really doing.</p><p>By the time you finish reading our content, you will not just know what to do, you will know why it works, which means you can apply it to any situation, any niche, any website, without needing a new checklist every time Google updates its algorithm.</p><h2>What Makes Us Different</h2><ul><li><strong>We go foundational.</strong> Every article is built from first principles. No assumed knowledge, no jargon without explanation.</li><li><strong>We make it interactive.</strong> We do not just describe concepts, we show you how they behave, with real examples you can see and test yourself.</li><li><strong>We teach the system, not the shortcut.</strong> Shortcuts expire. System knowledge compounds. Our goal is to turn you into someone who understands search engines deeply enough to figure out any SEO challenge on your own.</li><li><strong>We cover the whys.</strong> Why does Google care about page speed? Why does keyword placement in a title matter? Why do some backlinks count and others do not? Every lesson answers the question underneath the question.</li></ul><h2>What You Will Walk Away With</h2><p>After going through our content, you will understand:</p><ul><li>How search engines crawl and index the web</li><li>Why certain HTML elements carry more weight than others</li><li>How to write title tags and meta descriptions that actually work, and why they work</li><li>What signals search engines use to decide which page deserves to rank</li><li>How to think about any SEO decision from a logical, system-level perspective</li></ul><p>You will not just be better at SEO. You will understand SEO, and that is something no algorithm update can take away from you.</p><h2>Our Promise</h2><p>We will never publish content that tells you what to do without explaining why. If we cover a topic, we cover it properly, from the foundation up, in plain language, with real examples.</p><p>Because we believe the internet deserves more people who actually understand how it works.</p><p>Welcome. Let\'s start from the beginning.</p>',
                 'meta_title' => 'About Search Engine Basics',
                 'meta_description' => 'Learn about Search Engine Basics, the free structured library for understanding crawling, indexing, ranking, search algorithms, and SEO fundamentals.',
                 'status' => true,
@@ -349,9 +349,11 @@ class SearchEngineBasicsSiteSeeder extends Seeder
 
     private function shareCode(Blog $blog, string $platform): string
     {
-        $hash = substr(hash('crc32b', $blog->slug.'-'.$platform), 0, 7);
+        $platformPrefix = substr(preg_replace('/[^a-z0-9]/i', '', $platform) ?: 's', 0, 1);
+        $blogKey = base_convert((string) $blog->id, 10, 36);
+        $hash = substr(hash('crc32b', $blog->slug.'|'.$platform), 0, 4);
 
-        return Str::slug(substr($blog->slug, 0, 20).'-'.substr($platform, 0, 2).'-'.$hash);
+        return Str::lower($platformPrefix.$blogKey.$hash);
     }
 
     private function estimateReadTime(string $html): string

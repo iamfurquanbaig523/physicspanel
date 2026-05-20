@@ -286,6 +286,10 @@ class SettingController extends Controller
             ], fn ($value) => ! is_null($value) && $value !== '');
             if (! empty($frontendIntegrationEnv)) {
                 HelperService::changeEnv($frontendIntegrationEnv);
+                $this->syncFrontendEnv([
+                    'NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION' => $frontendIntegrationEnv['GOOGLE_SITE_VERIFICATION'] ?? null,
+                    'NEXT_PUBLIC_GTM_CONTAINER_ID' => $frontendIntegrationEnv['GTM_CONTAINER_ID'] ?? null,
+                ]);
             }
 
             if (! empty($inputs['otp_service_provider']) && $inputs['otp_service_provider'] === 'twilio') {
@@ -487,6 +491,27 @@ class SettingController extends Controller
         $settings = CachingService::getSystemSettings()->toArray();
 
         return view('settings.payment-gateway', compact('paymentGateway', 'settings'));
+    }
+
+    private function syncFrontendEnv(array $values): void
+    {
+        $values = array_filter($values, fn ($value) => ! is_null($value) && $value !== '');
+        if (empty($values)) {
+            return;
+        }
+
+        $candidates = array_filter(array_unique([
+            env('FRONTEND_ENV_PATH'),
+            base_path('../searchenginebasics-academy/.env.local'),
+            'C:\\Users\\Muham\\searchenginebasics-academy\\.env.local',
+        ]));
+
+        foreach ($candidates as $path) {
+            if (is_file($path) && is_writable($path)) {
+                HelperService::changeEnvFile($path, $values);
+                return;
+            }
+        }
     }
 
     public function paymentSettingsStore(Request $request)

@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Validator;
 
 class PublicContentController extends Controller
 {
-    private const SHARE_PLATFORMS = ['facebook', 'instagram', 'tiktok', 'whatsapp'];
+    private const SHARE_PLATFORMS = ['facebook', 'instagram', 'tiktok', 'whatsapp', 'link'];
 
     public function settings()
     {
@@ -521,11 +521,19 @@ class PublicContentController extends Controller
                 ]
             );
 
-            if ($shareLink->target_url !== $targetUrl || ! $shareLink->is_active) {
-                $shareLink->update([
-                    'target_url' => $targetUrl,
-                    'is_active' => true,
-                ]);
+            $updates = [];
+            if ($shareLink->target_url !== $targetUrl) {
+                $updates['target_url'] = $targetUrl;
+            }
+            if (! $shareLink->is_active) {
+                $updates['is_active'] = true;
+            }
+            if (strlen($shareLink->code) > 10) {
+                $updates['code'] = $this->uniqueShareCode($blog, $platform, $shareLink->id);
+            }
+
+            if (! empty($updates)) {
+                $shareLink->update($updates);
             }
 
             $links[$platform] = [
@@ -537,14 +545,17 @@ class PublicContentController extends Controller
         return $links;
     }
 
-    private function uniqueShareCode(Blog $blog, string $platform): string
+    private function uniqueShareCode(Blog $blog, string $platform, ?int $ignoreId = null): string
     {
-        $base = Str::lower(Str::slug(substr($platform, 0, 2).'-'.$blog->id.'-'.Str::random(5), '-'));
+        $platformPrefix = substr(preg_replace('/[^a-z0-9]/i', '', $platform) ?: 's', 0, 1);
+        $blogKey = base_convert((string) $blog->id, 10, 36);
+        $hash = substr(hash('crc32b', $blog->slug.'|'.$platform), 0, 4);
+        $base = Str::lower($platformPrefix.$blogKey.$hash);
         $code = $base;
         $counter = 2;
 
-        while (ArticleShareLink::where('code', $code)->exists()) {
-            $code = $base.'-'.$counter++;
+        while (ArticleShareLink::where('code', $code)->when($ignoreId, fn ($query) => $query->where('id', '!=', $ignoreId))->exists()) {
+            $code = $base.base_convert((string) $counter++, 10, 36);
         }
 
         return $code;

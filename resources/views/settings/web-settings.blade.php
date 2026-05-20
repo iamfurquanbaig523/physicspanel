@@ -108,7 +108,7 @@
                             </div>
                         </div>
 
-                    <div class="divider pt-3">
+                    <div id="search-console-analytics" class="divider pt-3">
                         <h6 class="divider-text">{{ __('Search Console & Analytics') }}</h6>
                     </div>
                     <div class="form-group col-md-6 col-sm-12">
