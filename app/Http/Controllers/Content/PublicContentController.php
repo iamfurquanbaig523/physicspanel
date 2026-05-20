@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Content;
 
 use App\Http\Controllers\Controller;
+use App\Models\ArticleShareLink;
 use App\Models\Author;
 use App\Models\Blog;
 use App\Models\Category;
@@ -18,15 +19,23 @@ use Illuminate\Support\Facades\Validator;
 
 class PublicContentController extends Controller
 {
+    private const SHARE_PLATFORMS = ['facebook', 'instagram', 'tiktok', 'whatsapp'];
+
     public function settings()
     {
+        $siteUrl = rtrim($this->settingValue('website_url') ?: 'https://searchenginebasics.io', '/');
+
         return response()->json([
             'error' => false,
             'data' => [
-                'brand_name' => Setting::where('name', 'company_name')->value('value') ?: 'Search Engine Basics',
+                'brand_name' => $this->settingValue('company_name') ?: 'Search Engine Basics',
                 'domain' => 'searchenginebasics.io',
-                'site_url' => Setting::where('name', 'website_url')->value('value') ?: 'https://searchenginebasics.io',
-                'contact_email' => Setting::where('name', 'company_email')->value('value') ?: 'hello@searchenginebasics.io',
+                'site_url' => $siteUrl,
+                'contact_email' => $this->settingValue('company_email') ?: 'hello@searchenginebasics.io',
+                'google_site_verification' => $this->settingValue('google_site_verification') ?: config('services.google.site_verification'),
+                'gtm_container_id' => $this->settingValue('gtm_container_id') ?: config('services.google.gtm_container_id'),
+                'default_thumbnail' => $this->settingValue('default_share_thumbnail'),
+                'home_main_article_markdown' => $this->settingValue('home_main_article_markdown'),
             ],
         ]);
     }
@@ -111,11 +120,26 @@ class PublicContentController extends Controller
 
     public function author(string $slug)
     {
-        $author = Author::where('slug', $slug)->where('status', true)->firstOrFail();
+        $author = Author::with([
+            'blogs' => fn ($q) => $this->publishedArticleQuery($q),
+            'contributedBlogs' => fn ($q) => $this->publishedArticleQuery($q),
+        ])
+            ->where('slug', $slug)
+            ->where('status', true)
+            ->firstOrFail();
+
+        $articles = $author->blogs
+            ->merge($author->contributedBlogs)
+            ->unique('id')
+            ->sortBy('sort_order')
+            ->values()
+            ->map(fn (Blog $blog) => $this->blogPayload($blog));
 
         return response()->json([
             'error' => false,
-            'data' => $author,
+            'data' => array_merge($author->toArray(), [
+                'articles' => $articles,
+            ]),
         ]);
     }
 
@@ -233,6 +257,7 @@ class PublicContentController extends Controller
             'additionalAuthors' => $blog->additionalAuthors,
             'reviewers' => $blog->reviewers,
             'editors' => $blog->editors,
+            'shareLinks' => $this->shareLinksForBlog($blog),
         ];
 
         if ($includeContent) {
@@ -384,6 +409,9 @@ class PublicContentController extends Controller
             'attributes' => $this->normalizeAttributes($article->content_attributes),
             'previewHeadings' => $this->extractHeadings($description),
             'isCurrent' => $currentId ? $article->id === $currentId : false,
+            'image' => $article->image,
+            'categorySlug' => $article->seriesCategory?->slug,
+            'categoryTitle' => $article->seriesCategory?->series_title ?: $article->seriesCategory?->name,
         ];
     }
 
@@ -456,5 +484,76 @@ class PublicContentController extends Controller
             ->take($limit)
             ->values()
             ->all();
+    }
+
+    public function shareLink(string $code)
+    {
+        $shareLink = ArticleShareLink::where('code', $code)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        $shareLink->increment('click_count');
+
+        return response()->json([
+            'error' => false,
+            'data' => [
+                'targetUrl' => $shareLink->target_url,
+                'platform' => $shareLink->platform,
+            ],
+        ]);
+    }
+
+    private function shareLinksForBlog(Blog $blog): array
+    {
+        $siteUrl = rtrim($this->settingValue('website_url') ?: 'https://searchenginebasics.io', '/');
+        $categorySlug = $blog->seriesCategory?->slug;
+        $targetPath = $categorySlug ? '/'.$categorySlug.'/'.$blog->slug : '/'.$blog->slug;
+        $targetUrl = $siteUrl.$targetPath;
+        $links = [];
+
+        foreach (self::SHARE_PLATFORMS as $platform) {
+            $shareLink = ArticleShareLink::firstOrCreate(
+                ['blog_id' => $blog->id, 'platform' => $platform],
+                [
+                    'code' => $this->uniqueShareCode($blog, $platform),
+                    'target_url' => $targetUrl,
+                    'is_active' => true,
+                ]
+            );
+
+            if ($shareLink->target_url !== $targetUrl || ! $shareLink->is_active) {
+                $shareLink->update([
+                    'target_url' => $targetUrl,
+                    'is_active' => true,
+                ]);
+            }
+
+            $links[$platform] = [
+                'shortUrl' => $siteUrl.'/s/'.$shareLink->code,
+                'targetUrl' => $targetUrl,
+            ];
+        }
+
+        return $links;
+    }
+
+    private function uniqueShareCode(Blog $blog, string $platform): string
+    {
+        $base = Str::lower(Str::slug(substr($platform, 0, 2).'-'.$blog->id.'-'.Str::random(5), '-'));
+        $code = $base;
+        $counter = 2;
+
+        while (ArticleShareLink::where('code', $code)->exists()) {
+            $code = $base.'-'.$counter++;
+        }
+
+        return $code;
+    }
+
+    private function settingValue(string $name): ?string
+    {
+        $setting = Setting::where('name', $name)->first();
+
+        return $setting?->value;
     }
 }

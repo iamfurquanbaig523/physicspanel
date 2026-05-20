@@ -75,11 +75,26 @@ class Blog extends Model {
         return $this->hasMany(BlogFaq::class)->orderBy('sort_order')->orderBy('id');
     }
 
+    public function shareLinks() {
+        return $this->hasMany(ArticleShareLink::class);
+    }
+
     public function getImageAttribute($image) {
         if (!empty($image)) {
-            return url(Storage::url($image));
+            return $this->publicStorageUrl($image);
         }
         return $image;
+    }
+
+    private function publicStorageUrl(string $path): string {
+        $storageUrl = Storage::url($path);
+
+        if (! app()->runningInConsole() && request()?->getHost() && in_array(request()->getHost(), ['localhost', '127.0.0.1'], true)) {
+            $localPath = parse_url($storageUrl, PHP_URL_PATH) ?: $storageUrl;
+            return rtrim(request()->getSchemeAndHttpHost().request()->getBaseUrl(), '/').$localPath;
+        }
+
+        return url($storageUrl);
     }
 
         public function getTagsAttribute($value) {

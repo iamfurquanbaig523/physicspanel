@@ -49,7 +49,14 @@ class Author extends Model
             return $this->avatar;
         }
 
-        return url(Storage::url($this->avatar));
+        $storageUrl = Storage::url($this->avatar);
+
+        if (! app()->runningInConsole() && request()?->getHost() && in_array(request()->getHost(), ['localhost', '127.0.0.1'], true)) {
+            $localPath = parse_url($storageUrl, PHP_URL_PATH) ?: $storageUrl;
+            return rtrim(request()->getSchemeAndHttpHost().request()->getBaseUrl(), '/').$localPath;
+        }
+
+        return url($storageUrl);
     }
 
     public function scopeSearch($query, ?string $search)

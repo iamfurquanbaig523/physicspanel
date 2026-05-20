@@ -13,6 +13,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SearchQueryController;
 use App\Http\Controllers\SeoSettingController;
 use App\Http\Controllers\SettingController;
+use App\Http\Controllers\ShareLinkController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\SystemUpdateController;
 use Illuminate\Support\Facades\Auth;
@@ -20,6 +21,8 @@ use Illuminate\Support\Facades\Route;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 
 Auth::routes();
+
+Route::get('/s/{code}', [ShareLinkController::class, 'redirect'])->name('share-links.redirect');
 
 Route::get('/', static function () {
     if (Auth::user()) {

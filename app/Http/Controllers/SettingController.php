@@ -132,6 +132,10 @@ class SettingController extends Controller
             'facebook_link' => 'nullable|url',
             'linkedin_link' => 'nullable|url',
             'pinterest_link' => 'nullable|url',
+            'google_site_verification' => 'nullable|string|max:255',
+            'gtm_container_id' => 'nullable|string|max:80',
+            'default_share_thumbnail' => 'nullable|mimes:jpg,jpeg,png,webp|max:7168',
+            'home_main_article_markdown' => 'nullable|string',
             'deep_link_text_file' => 'nullable',
             'deep_link_json_file' => 'nullable|mimes:json|max:7168',
             'mobile_authentication' => 'nullable',
@@ -274,6 +278,14 @@ class SettingController extends Controller
             // Only update env if there's something to update
             if (! empty($filteredSettings)) {
                 HelperService::changeEnv($filteredSettings);
+            }
+
+            $frontendIntegrationEnv = array_filter([
+                'GOOGLE_SITE_VERIFICATION' => $inputs['google_site_verification'] ?? null,
+                'GTM_CONTAINER_ID' => $inputs['gtm_container_id'] ?? null,
+            ], fn ($value) => ! is_null($value) && $value !== '');
+            if (! empty($frontendIntegrationEnv)) {
+                HelperService::changeEnv($frontendIntegrationEnv);
             }
 
             if (! empty($inputs['otp_service_provider']) && $inputs['otp_service_provider'] === 'twilio') {

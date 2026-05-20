@@ -16,6 +16,7 @@ use App\Services\ResponseService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -300,17 +301,28 @@ class BlogController extends Controller
 
     private function syncContributors(Blog $blog, Request $request): void
     {
-        $syncData = [];
+        $rows = [];
         foreach ($request->input('additional_authors', []) as $authorId) {
-            $syncData[$authorId] = ['contribution_type' => 'author'];
+            $rows[] = ['author_id' => (int) $authorId, 'contribution_type' => 'author'];
         }
         foreach ($request->input('reviewers', []) as $reviewerId) {
-            $syncData[$reviewerId] = ['contribution_type' => 'reviewer'];
+            $rows[] = ['author_id' => (int) $reviewerId, 'contribution_type' => 'reviewer'];
         }
         foreach ($request->input('editors', []) as $editorId) {
-            $syncData[$editorId] = ['contribution_type' => 'editor'];
+            $rows[] = ['author_id' => (int) $editorId, 'contribution_type' => 'editor'];
         }
-        $blog->additionalAuthors()->sync($syncData); // Using one of the relationships to sync the whole table
+
+        DB::table('blog_contributors')->where('blog_id', $blog->id)->delete();
+
+        foreach (collect($rows)->unique(fn ($row) => $row['author_id'].'-'.$row['contribution_type']) as $row) {
+            DB::table('blog_contributors')->insert([
+                'blog_id' => $blog->id,
+                'author_id' => $row['author_id'],
+                'contribution_type' => $row['contribution_type'],
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
     }
 
     private function saveTranslations(Request $request, Blog $blog): void

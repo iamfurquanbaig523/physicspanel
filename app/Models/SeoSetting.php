@@ -20,7 +20,14 @@ class SeoSetting extends Model
     protected $appends = ['translated_title','translated_description','translated_keywords'];
     public function getImageAttribute($image) {
         if (!empty($image)) {
-            return url(Storage::url($image));
+            $storageUrl = Storage::url($image);
+
+            if (! app()->runningInConsole() && request()?->getHost() && in_array(request()->getHost(), ['localhost', '127.0.0.1'], true)) {
+                $localPath = parse_url($storageUrl, PHP_URL_PATH) ?: $storageUrl;
+                return rtrim(request()->getSchemeAndHttpHost().request()->getBaseUrl(), '/').$localPath;
+            }
+
+            return url($storageUrl);
         }
         return $image;
     }

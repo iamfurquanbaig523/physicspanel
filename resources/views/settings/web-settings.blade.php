@@ -108,6 +108,31 @@
                             </div>
                         </div>
 
+                    <div class="divider pt-3">
+                        <h6 class="divider-text">{{ __('Search Console & Analytics') }}</h6>
+                    </div>
+                    <div class="form-group col-md-6 col-sm-12">
+                        <label for="google_site_verification" class="form-label">{{ __('Google Search Console Verification Key') }}</label>
+                        <input id="google_site_verification" name="google_site_verification" type="text" class="form-control" value="{{ $settings['google_site_verification'] ?? '' }}" placeholder="google-site-verification key">
+                        <small class="text-muted">{{ __('This key is rendered as the google-site-verification meta tag on the public website.') }}</small>
+                    </div>
+                    <div class="form-group col-md-6 col-sm-12">
+                        <label for="gtm_container_id" class="form-label">{{ __('Google Tag Manager Container ID') }}</label>
+                        <input id="gtm_container_id" name="gtm_container_id" type="text" class="form-control" value="{{ $settings['gtm_container_id'] ?? '' }}" placeholder="GTM-XXXXXXX">
+                        <small class="text-muted">{{ __('The public website uses this ID for the head script and body noscript tag.') }}</small>
+                    </div>
+                    <div class="form-group col-md-6 col-sm-12">
+                        <label class="form-label">{{ __('Default Share Thumbnail') }}</label>
+                        <input class="filepond" type="file" name="default_share_thumbnail" id="default_share_thumbnail">
+                        @if(!empty($settings['default_share_thumbnail']))
+                            <img src="{{ $settings['default_share_thumbnail'] }}" class="w-25 d-block mt-2" alt="Default share thumbnail">
+                        @endif
+                    </div>
+                    <div class="form-group col-md-12 col-sm-12">
+                        <label for="home_main_article_markdown" class="form-label">{{ __('Home Main Article Markdown') }}</label>
+                        <textarea id="home_main_article_markdown" name="home_main_article_markdown" class="form-control" rows="8" placeholder="{{ __('Markdown shown on the home page') }}">{{ $settings['home_main_article_markdown'] ?? '' }}</textarea>
+                    </div>
+
 
                     <div class="divider pt-3">
                         <h6 class="divider-text">{{ __('Social Media Links') }}</h6>

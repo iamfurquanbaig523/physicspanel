@@ -168,7 +168,7 @@ class SearchEngineBasicsArticleSeeder extends Seeder
                     'content_attributes' => $article['attributes'],
                     'is_featured' => false,
                     'status' => 'published',
-                    'published_at' => Carbon::create(2026, 5, 14 + $articleNumber, 9, 0, 0),
+                    'published_at' => $this->publicationDate($articleNumber),
                     'meta_title' => $article['meta_title'],
                     'meta_description' => $article['meta_description'],
                 ]
@@ -265,6 +265,14 @@ class SearchEngineBasicsArticleSeeder extends Seeder
             }
             $index++;
         }
+    }
+
+    private function publicationDate(int $articleNumber): Carbon
+    {
+        $date = Carbon::create(2026, 5, 14 + $articleNumber, 9, 0, 0);
+        $cap = Carbon::create(2026, 5, 20, 9, 0, 0);
+
+        return $date->greaterThan($cap) ? $cap : $date;
     }
 
     private function patchExistingFoundationArticles(Category $category, Author $author): void

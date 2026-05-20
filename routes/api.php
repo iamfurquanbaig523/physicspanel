@@ -12,6 +12,7 @@ Route::prefix('site')->group(function () {
     Route::get('articles', [PublicContentController::class, 'articles']);
     Route::get('authors', [PublicContentController::class, 'authors']);
     Route::get('authors/{slug}', [PublicContentController::class, 'author']);
+    Route::get('share-links/{code}', [PublicContentController::class, 'shareLink']);
     Route::get('company-pages/{slug}', [PublicContentController::class, 'companyPage']);
     Route::post('contact', [PublicContentController::class, 'storeContact']);
     Route::post('newsletter', [PublicContentController::class, 'storeNewsletter']);
