@@ -224,10 +224,15 @@ class SettingController extends Controller
                     $rootPath = base_path('.well-known/' . $filename);
                     File::put($rootPath, $fileContents);
                 } else {
+                    $uploadedFile = FileService::compressAndUpload($request->file($key), $this->uploadFolder);
+
+                    if (! $uploadedFile) {
+                        return ResponseService::errorRedirectResponse(ucwords(str_replace('_', ' ', $key)).' upload failed. Please try again.');
+                    }
 
                     $data[] = [
                         'name' => $key,
-                        'value' => FileService::compressAndUpload($request->file($key), $this->uploadFolder),
+                        'value' => $uploadedFile,
                         // 'value' => $request->file($key)->store($this->uploadFolder, 'public'),
                         'type' => 'file',
                     ];

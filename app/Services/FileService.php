@@ -105,8 +105,17 @@ class FileService
      */
     public static function replace($requestFile, $folder, $deleteRawOriginalImage)
     {
-        self::delete($deleteRawOriginalImage);
-        return self::upload($requestFile, $folder);
+        $newPath = self::upload($requestFile, $folder);
+
+        if (empty($newPath)) {
+            return $deleteRawOriginalImage ?: false;
+        }
+
+        if (!empty($deleteRawOriginalImage) && $newPath !== $deleteRawOriginalImage) {
+            self::delete($deleteRawOriginalImage);
+        }
+
+        return $newPath;
     }
 
     /**
@@ -117,10 +126,17 @@ class FileService
      */
     public static function compressAndReplace($requestFile, $folder, $deleteRawOriginalImage, bool $addWaterMark = false)
     {
-        if (!empty($deleteRawOriginalImage)) {
+        $newPath = self::compressAndUpload($requestFile, $folder, $addWaterMark);
+
+        if (empty($newPath)) {
+            return $deleteRawOriginalImage ?: false;
+        }
+
+        if (!empty($deleteRawOriginalImage) && $newPath !== $deleteRawOriginalImage) {
             self::delete($deleteRawOriginalImage);
         }
-        return self::compressAndUpload($requestFile, $folder, $addWaterMark);
+
+        return $newPath;
     }
 
 
@@ -216,12 +232,8 @@ class FileService
     }
     public static function compressAndReplaceWithWatermark($requestFile, $folder, $deleteRawOriginalImage = null)
     {
-
-        if (!empty($deleteRawOriginalImage)) {
-            self::delete($deleteRawOriginalImage);
-        }
-
         $file_name = uniqid('', true) . time() . '.' . $requestFile->getClientOriginalExtension();
+        $newPath = $folder . '/' . $file_name;
 
         try {
             if (in_array($requestFile->getClientOriginalExtension(), ['jpg', 'jpeg', 'png'])) {
@@ -250,14 +262,18 @@ class FileService
                 }
 
 
-                Storage::disk(config('filesystems.default'))->put($folder . '/' . $file_name, (string)$image->encode());
+                Storage::disk(config('filesystems.default'))->put($newPath, (string)$image->encode());
             } else {
 
                 $file = $requestFile;
                 $file->storeAs($folder, $file_name, 'public');
             }
 
-            return $folder . '/' . $file_name;
+            if (!empty($deleteRawOriginalImage) && $newPath !== $deleteRawOriginalImage) {
+                self::delete($deleteRawOriginalImage);
+            }
+
+            return $newPath;
         } catch (Exception $e) {
             throw new RuntimeException($e);
         }

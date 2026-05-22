@@ -83,7 +83,13 @@ class BlogController extends Controller
             ];
 
             if ($request->hasFile('image')) {
-                $data['image'] = FileService::compressAndUpload($request->file('image'), $this->uploadFolder);
+                $uploadedImage = FileService::compressAndUpload($request->file('image'), $this->uploadFolder);
+
+                if (! $uploadedImage) {
+                    return ResponseService::errorRedirectResponse('Image upload failed. Please try again.');
+                }
+
+                $data['image'] = $uploadedImage;
             }
 
             $blog = Blog::create($data);
@@ -208,7 +214,13 @@ class BlogController extends Controller
             ];
 
             if ($request->hasFile('image')) {
-                $data['image'] = FileService::compressAndReplace($request->file('image'), $this->uploadFolder, $blog->getRawOriginal('image'));
+                $uploadedImage = FileService::compressAndReplace($request->file('image'), $this->uploadFolder, $blog->getRawOriginal('image'));
+
+                if (! $uploadedImage) {
+                    return ResponseService::errorRedirectResponse('Image upload failed. Please try again.');
+                }
+
+                $data['image'] = $uploadedImage;
             }
 
             if ($request->has('is_featured')) {
@@ -284,6 +296,7 @@ class BlogController extends Controller
             'content_attributes_touched' => ['nullable', 'boolean'],
             'attribute_presets' => ['nullable'],
             'attribute_presets_touched' => ['nullable', 'boolean'],
+            'contributors_touched' => ['nullable', 'boolean'],
             'faqs_touched' => ['nullable', 'boolean'],
             'faqs' => ['nullable', 'array'],
             'faqs.*.question' => ['nullable', 'string', 'max:512'],

@@ -24,7 +24,13 @@ class SeoSetting extends Model
 
             if (! app()->runningInConsole() && request()?->getHost() && in_array(request()->getHost(), ['localhost', '127.0.0.1'], true)) {
                 $localPath = parse_url($storageUrl, PHP_URL_PATH) ?: $storageUrl;
-                return rtrim(request()->getSchemeAndHttpHost().request()->getBaseUrl(), '/').$localPath;
+                $basePath = rtrim(request()->getBaseUrl(), '/');
+
+                if ($basePath !== '' && str_starts_with($localPath, $basePath.'/')) {
+                    return request()->getSchemeAndHttpHost().$localPath;
+                }
+
+                return rtrim(request()->getSchemeAndHttpHost().$basePath, '/').'/'.ltrim($localPath, '/');
             }
 
             return url($storageUrl);

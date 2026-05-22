@@ -2,7 +2,23 @@
     $category_data = $category_data ?? null;
     $articles = $articles ?? collect();
     $currentArticles = $currentArticles ?? collect();
-    $currentArticlesJson = old('articles', $currentArticles->toJson());
+    $isEditingCategory = ! empty($category_data?->id);
+
+    if ($isEditingCategory && $currentArticles->isEmpty()) {
+        $currentArticles = \App\Models\Blog::where('category_id', $category_data->id)
+            ->orderByRaw('CASE WHEN sort_order IS NULL OR sort_order = 0 THEN 999999 ELSE sort_order END ASC')
+            ->orderBy('title')
+            ->get()
+            ->map(fn ($article) => [
+                'id' => $article->id,
+                'title' => $article->title,
+                'sort_order' => $article->sort_order,
+            ])
+            ->values();
+    }
+
+    $currentArticlesJson = $isEditingCategory ? $currentArticles->toJson() : old('articles', $currentArticles->toJson());
+    $articlesTouched = $isEditingCategory ? '0' : old('articles_touched', '0');
 @endphp
 
 <div class="card mt-4">
@@ -92,7 +108,8 @@
 <div class="card mt-4" id="category-articles-app">
     <div class="card-header">{{ __('Category Articles') }}</div>
     <div class="card-body">
-        <input type="hidden" name="articles" id="category-articles-input" value="{{ e($currentArticlesJson) }}">
+        <input type="hidden" name="articles" id="category-articles-input" value="{{ $currentArticlesJson }}">
+        <input type="hidden" name="articles_touched" id="category-articles-touched" value="{{ $articlesTouched }}">
 
         <div class="row mb-3">
             <div class="col-md-7">
@@ -112,6 +129,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const input = document.getElementById('category-articles-input');
+        const touchedInput = document.getElementById('category-articles-touched');
         const list = document.getElementById('category-articles-list');
         const select = document.getElementById('category-article-select');
         let items = [];
@@ -124,6 +142,10 @@
 
         function save() {
             input.value = JSON.stringify(items);
+        }
+
+        function markTouched() {
+            touchedInput.value = '1';
         }
 
         function render() {
@@ -155,6 +177,7 @@
             }
             items.push({ id, title: this.options[this.selectedIndex].dataset.title });
             this.value = '';
+            markTouched();
             render();
         });
 
@@ -167,12 +190,15 @@
 
             if (action === 'remove') {
                 items.splice(index, 1);
+                markTouched();
             }
             if (action === 'up' && index > 0) {
                 [items[index - 1], items[index]] = [items[index], items[index - 1]];
+                markTouched();
             }
             if (action === 'down' && index < items.length - 1) {
                 [items[index + 1], items[index]] = [items[index], items[index + 1]];
+                markTouched();
             }
 
             render();

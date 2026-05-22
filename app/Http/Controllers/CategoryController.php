@@ -66,6 +66,7 @@ class CategoryController extends Controller {
             'meta_title' => 'nullable|string|max:512',
             'meta_description' => 'nullable|string',
             'articles' => 'nullable|string',
+            'articles_touched' => 'nullable|boolean',
             'slug' => [
                 'nullable',
                 'regex:/^[a-zA-Z0-9\-_]+$/'
@@ -113,11 +114,17 @@ class CategoryController extends Controller {
             $data['slug'] = HelperService::generateUniqueSlug(new Category, $slug);
 
             if ($request->hasFile('image')) {
-                $data['image'] = FileService::compressAndUpload($request->file('image'), $this->uploadFolder);
+                $uploadedImage = FileService::compressAndUpload($request->file('image'), $this->uploadFolder);
+
+                if (! $uploadedImage) {
+                    return ResponseService::errorRedirectResponse('Image upload failed. Please try again.');
+                }
+
+                $data['image'] = $uploadedImage;
             }
 
             $category = Category::create($data);
-            $this->syncArticles($category, $request->input('articles'));
+            $this->syncArticles($category, $request->input('articles'), $request->boolean('articles_touched'));
 
             foreach ($otherLanguages as $lang) {
                 $langId = $lang->id;
@@ -229,7 +236,7 @@ class CategoryController extends Controller {
         $parent_category = $parent_category_data->name ?? '';
         $categories = Category::with('subcategories')->get();
         $articles = Blog::orderBy('title')->get();
-        $currentArticles = $category_data->blogs()
+        $currentArticles = Blog::where('category_id', $category_data->id)
             ->orderByRaw('CASE WHEN sort_order IS NULL OR sort_order = 0 THEN 999999 ELSE sort_order END ASC')
             ->orderBy('title')
             ->get()
@@ -269,6 +276,7 @@ class CategoryController extends Controller {
                 'meta_title' => 'nullable|string|max:512',
                 'meta_description' => 'nullable|string',
                 'articles' => 'nullable|string',
+                'articles_touched' => 'nullable|boolean',
                 'slug' => [
                     'nullable',
                     'regex:/^[a-zA-Z0-9\-_]+$/'
@@ -286,7 +294,7 @@ class CategoryController extends Controller {
                 'slug.regex' => 'Slug must be only English letters, numbers, hyphens (-), or underscores (_).'
             ]);
             
-            $category = Category::find($id);
+            $category = Category::findOrFail($id);
             if ($request->parent_category_id == $category->id) {
                 return back()->withErrors(['parent_category' => 'A category cannot be set as its own parent.']);
             }
@@ -324,7 +332,13 @@ class CategoryController extends Controller {
             }
 
             if ($request->hasFile('image')) {
-                $data['image'] = FileService::compressAndReplace($request->file('image'), $this->uploadFolder, $category->getRawOriginal('image'));
+                $uploadedImage = FileService::compressAndReplace($request->file('image'), $this->uploadFolder, $category->getRawOriginal('image'));
+
+                if (! $uploadedImage) {
+                    return ResponseService::errorRedirectResponse('Image upload failed. Please try again.');
+                }
+
+                $data['image'] = $uploadedImage;
             }
             $slug = trim($request->input('slug') ?? '');
             $slug = preg_replace('/[^a-z0-9]+/i', '-', strtolower($slug));
@@ -334,7 +348,7 @@ class CategoryController extends Controller {
             }
             $data['slug'] = HelperService::generateUniqueSlug(new Category(), $slug, $category->id);
             $category->update($data);
-            $this->syncArticles($category, $request->input('articles'));
+            $this->syncArticles($category, $request->input('articles'), $request->boolean('articles_touched'));
             
             if ($request->has('is_job_category')) {
                 $category->subcategories()->update([
@@ -564,9 +578,9 @@ class CategoryController extends Controller {
         }
     }
 
-    private function syncArticles(Category $category, ?string $articlesInput): void
+    private function syncArticles(Category $category, ?string $articlesInput, bool $articlesTouched = true): void
     {
-        if ($articlesInput === null) {
+        if (! $articlesTouched || $articlesInput === null) {
             return;
         }
 

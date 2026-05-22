@@ -394,6 +394,11 @@ class ItemController extends Controller
             ]);
         }
 
+        if ($validator->fails()) {
+            DB::rollBack();
+            return back()->withErrors($validator)->withInput();
+        }
+
         $customFieldCategories = CustomFieldCategory::with('custom_fields')
             ->where('category_id', $request->category_id)
             ->get();
@@ -431,6 +436,7 @@ class ItemController extends Controller
             }
         }
         if (! empty($customFieldErrors)) {
+            DB::rollBack();
             return back()->withErrors($customFieldErrors)->withInput();
         }
 
@@ -449,24 +455,40 @@ class ItemController extends Controller
         $data['longitude'] = $request->input('longitude');
 
         if ($request->hasFile('image')) {
-            $data['image'] = FileService::compressAndReplace($request->file('image'), 'item_images', $item->getRawOriginal('image'), true);
+            $uploadedImage = FileService::compressAndReplace($request->file('image'), 'item_images', $item->getRawOriginal('image'), true);
+
+            if (! $uploadedImage) {
+                DB::rollBack();
+                return back()->withErrors(['image' => 'Image upload failed. Please try again.'])->withInput();
+            }
+
+            $data['image'] = $uploadedImage;
         }
 
         $oldCategoryId = $item->category_id;
         $newCategoryId = $request->category_id;
 
         $isCategoryChanged = $oldCategoryId != $newCategoryId;
-        $oldCustomFieldValues = ItemCustomFieldValue::where('item_id', $item->id)->get();
-        foreach ($oldCustomFieldValues as $fieldValue) {
-            $customField = CustomField::find($fieldValue->custom_field_id);
-            if ($customField && $customField->type === 'file') {
-                $rawFilePath = $fieldValue->getRawOriginal('value');
-                if ($customField && $customField->type === 'file' && ! empty($rawFilePath)) {
-                    FileService::delete($rawFilePath);
+
+        if ($isCategoryChanged) {
+            $oldCustomFieldValues = ItemCustomFieldValue::where('item_id', $item->id)->get();
+            foreach ($oldCustomFieldValues as $fieldValue) {
+                $customField = CustomField::find($fieldValue->custom_field_id);
+                if ($customField && in_array($customField->type, ['file', 'fileinput'], true)) {
+                    $rawFilePath = $fieldValue->getRawOriginal('value');
+
+                    if (! empty($rawFilePath)) {
+                        $decodedPath = json_decode($rawFilePath, true);
+                        if (is_array($decodedPath)) {
+                            $rawFilePath = $decodedPath[0] ?? null;
+                        }
+                    }
+
+                    if (! empty($rawFilePath)) {
+                        FileService::delete($rawFilePath);
+                    }
                 }
             }
-        }
-        if ($isCategoryChanged) {
             ItemCustomFieldValue::where('item_id', $item->id)->delete();
         }
         $item->update($data);

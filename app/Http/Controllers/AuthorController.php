@@ -43,7 +43,13 @@ class AuthorController extends Controller
             $data['social_links'] = $this->socialLinks($request);
 
             if ($request->hasFile('avatar')) {
-                $data['avatar'] = FileService::compressAndUpload($request->file('avatar'), $this->uploadFolder);
+                $uploadedAvatar = FileService::compressAndUpload($request->file('avatar'), $this->uploadFolder);
+
+                if (! $uploadedAvatar) {
+                    return ResponseService::errorRedirectResponse('Avatar upload failed. Please try again.');
+                }
+
+                $data['avatar'] = $uploadedAvatar;
             }
 
             Author::create($data);
@@ -117,7 +123,13 @@ class AuthorController extends Controller
             }
 
             if ($request->hasFile('avatar')) {
-                $data['avatar'] = FileService::compressAndReplace($request->file('avatar'), $this->uploadFolder, $author->getRawOriginal('avatar'));
+                $uploadedAvatar = FileService::compressAndReplace($request->file('avatar'), $this->uploadFolder, $author->getRawOriginal('avatar'));
+
+                if (! $uploadedAvatar) {
+                    return ResponseService::errorRedirectResponse('Avatar upload failed. Please try again.');
+                }
+
+                $data['avatar'] = $uploadedAvatar;
             }
 
             $author->update($data);

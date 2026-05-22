@@ -103,10 +103,11 @@
                     </select>
                 </div>
             </div>
+            <input type="hidden" name="contributors_touched" id="contributors-touched" value="0">
             <div class="col-md-4">
                 <div class="form-group">
                     <label>{{ __('Additional Authors') }}</label>
-                    <select name="additional_authors[]" class="form-control select2 w-100" multiple="multiple" data-placeholder="{{ __('Select Authors') }}">
+                    <select name="additional_authors[]" class="form-control select2 w-100 contributor-select" multiple="multiple" data-placeholder="{{ __('Select Authors') }}">
                         @foreach($authors as $author)
                             <option value="{{ $author->id }}" @selected(in_array($author->id, old('additional_authors', $blog?->additionalAuthors->pluck('id')->toArray() ?? [])))>{{ $author->name }}</option>
                         @endforeach
@@ -116,7 +117,7 @@
             <div class="col-md-4">
                 <div class="form-group">
                     <label>{{ __('Reviewers') }}</label>
-                    <select name="reviewers[]" class="form-control select2 w-100" multiple="multiple" data-placeholder="{{ __('Select Reviewers') }}">
+                    <select name="reviewers[]" class="form-control select2 w-100 contributor-select" multiple="multiple" data-placeholder="{{ __('Select Reviewers') }}">
                         @foreach($authors as $author)
                             <option value="{{ $author->id }}" @selected(in_array($author->id, old('reviewers', $blog?->reviewers->pluck('id')->toArray() ?? [])))>{{ $author->name }}</option>
                         @endforeach
@@ -126,7 +127,7 @@
             <div class="col-md-4">
                 <div class="form-group">
                     <label>{{ __('Editors') }}</label>
-                    <select name="editors[]" class="form-control select2 w-100" multiple="multiple" data-placeholder="{{ __('Select Editors') }}">
+                    <select name="editors[]" class="form-control select2 w-100 contributor-select" multiple="multiple" data-placeholder="{{ __('Select Editors') }}">
                         @foreach($authors as $author)
                             <option value="{{ $author->id }}" @selected(in_array($author->id, old('editors', $blog?->editors->pluck('id')->toArray() ?? [])))>{{ $author->name }}</option>
                         @endforeach
@@ -400,6 +401,13 @@
 @section('script')
     <script>
         document.addEventListener("DOMContentLoaded", () => {
+            const contributorsTouched = document.getElementById('contributors-touched');
+            document.querySelectorAll('.contributor-select').forEach((select) => {
+                select.addEventListener('change', () => {
+                    contributorsTouched.value = '1';
+                });
+            });
+
             const editorImageUploadUrl = @json(route('blog.upload-editor-image'));
             const csrfToken = @json(csrf_token());
             const customTinyMceCSS = `
