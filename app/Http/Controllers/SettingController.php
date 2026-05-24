@@ -10,8 +10,10 @@ use App\Models\Currency;
 use Illuminate\Http\Request;
 use App\Services\FileService;
 use App\Services\HelperService;
+use App\Services\ArticleShareLinkService;
 use App\Jobs\ImportDummyDataJob;
 use App\Services\CachingService;
+use App\Services\PublicContentCacheService;
 use App\Services\ResponseService;
 use App\Models\SettingTranslation;
 use Illuminate\Support\Facades\Log;
@@ -428,6 +430,10 @@ class SettingController extends Controller
                 }
             }
             CachingService::removeCache(config('constants.CACHE.SETTINGS'));
+            if (array_key_exists('website_url', $inputs)) {
+                app(ArticleShareLinkService::class)->syncAllPublished();
+            }
+            PublicContentCacheService::invalidate();
             ResponseService::successResponse('Settings Updated Successfully');
         } catch (Throwable $th) {
             ResponseService::logErrorResponse($th, 'Setting Controller -> store');

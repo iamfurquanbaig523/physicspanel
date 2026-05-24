@@ -13,9 +13,18 @@
                 "url": {
                     "raw": "http://127.0.0.1:8000/api/site/settings",
                     "protocol": "http",
-                    "host": ["127", "0", "0", "1"],
+                    "host": [
+                        "127",
+                        "0",
+                        "0",
+                        "1"
+                    ],
                     "port": "8000",
-                    "path": ["api", "site", "settings"]
+                    "path": [
+                        "api",
+                        "site",
+                        "settings"
+                    ]
                 }
             },
             "event": [
@@ -30,6 +39,48 @@
                             "    var jsonData = pm.response.json();",
                             "    pm.expect(jsonData.error).to.eql(false);",
                             "    pm.expect(jsonData.data).to.be.an('object');",
+                            "    pm.expect(jsonData.data).to.not.have.property('home_main_article_markdown');",
+                            "});"
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "name": "GET Home Main Article",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "http://127.0.0.1:8000/api/site/home-main-article",
+                    "protocol": "http",
+                    "host": [
+                        "127",
+                        "0",
+                        "0",
+                        "1"
+                    ],
+                    "port": "8000",
+                    "path": [
+                        "api",
+                        "site",
+                        "home-main-article"
+                    ]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "pm.test(\"Response has home article markdown field\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.error).to.eql(false);",
+                            "    pm.expect(jsonData.data).to.be.an('object');",
+                            "    pm.expect(jsonData.data).to.have.property('home_main_article_markdown');",
                             "});"
                         ]
                     }
@@ -44,9 +95,18 @@
                 "url": {
                     "raw": "http://127.0.0.1:8000/api/site/blogs",
                     "protocol": "http",
-                    "host": ["127", "0", "0", "1"],
+                    "host": [
+                        "127",
+                        "0",
+                        "0",
+                        "1"
+                    ],
                     "port": "8000",
-                    "path": ["api", "site", "blogs"]
+                    "path": [
+                        "api",
+                        "site",
+                        "blogs"
+                    ]
                 }
             },
             "event": [
@@ -78,9 +138,19 @@
                 "url": {
                     "raw": "http://127.0.0.1:8000/api/site/blogs/{{blog_slug}}",
                     "protocol": "http",
-                    "host": ["127", "0", "0", "1"],
+                    "host": [
+                        "127",
+                        "0",
+                        "0",
+                        "1"
+                    ],
                     "port": "8000",
-                    "path": ["api", "site", "blogs", "{{blog_slug}}"]
+                    "path": [
+                        "api",
+                        "site",
+                        "blogs",
+                        "{{blog_slug}}"
+                    ]
                 }
             },
             "event": [
@@ -97,6 +167,11 @@
                             "        var jsonData = pm.response.json();",
                             "        pm.expect(jsonData.error).to.eql(false);",
                             "        pm.expect(jsonData.data).to.be.an('object');",
+                            "        var links = jsonData.data.shareLinks || {};",
+                            "        var firstLink = Object.keys(links).map(function (key) { return links[key]; }).find(function (link) { return link && link.shortUrl; });",
+                            "        if (firstLink) {",
+                            "            pm.collectionVariables.set('share_code', firstLink.shortUrl.split('/').pop());",
+                            "        }",
                             "    });",
                             "} else {",
                             "    console.log('Skipping because no blog_slug was found');",
@@ -107,16 +182,71 @@
             ]
         },
         {
-            "name": "GET Series",
+            "name": "GET Share Link Resolve",
             "request": {
                 "method": "GET",
                 "header": [],
                 "url": {
-                    "raw": "http://127.0.0.1:8000/api/site/series",
+                    "raw": "http://127.0.0.1:8000/api/site/share-links/{{share_code}}",
                     "protocol": "http",
-                    "host": ["127", "0", "0", "1"],
+                    "host": [
+                        "127",
+                        "0",
+                        "0",
+                        "1"
+                    ],
                     "port": "8000",
-                    "path": ["api", "site", "series"]
+                    "path": [
+                        "api",
+                        "site",
+                        "share-links",
+                        "{{share_code}}"
+                    ]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "var code = pm.collectionVariables.get('share_code');",
+                            "if (code) {",
+                            "    pm.test(\"Status code is 200\", function () {",
+                            "        pm.response.to.have.status(200);",
+                            "    });",
+                            "    pm.test(\"Response has target URL\", function () {",
+                            "        var jsonData = pm.response.json();",
+                            "        pm.expect(jsonData.error).to.eql(false);",
+                            "        pm.expect(jsonData.data.targetUrl).to.be.a('string');",
+                            "    });",
+                            "} else {",
+                            "    console.log('Skipping because no share_code was found');",
+                            "}"
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "name": "GET Categories",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "http://127.0.0.1:8000/api/site/categories",
+                    "protocol": "http",
+                    "host": [
+                        "127",
+                        "0",
+                        "0",
+                        "1"
+                    ],
+                    "port": "8000",
+                    "path": [
+                        "api",
+                        "site",
+                        "categories"
+                    ]
                 }
             },
             "event": [
@@ -130,8 +260,58 @@
                             "pm.test(\"Response has data array\", function () {",
                             "    var jsonData = pm.response.json();",
                             "    pm.expect(jsonData.error).to.eql(false);",
+                            "    if (jsonData.data.length > 0) {",
+                            "        pm.collectionVariables.set('category_slug', jsonData.data[0].slug);",
+                            "    }",
                             "    pm.expect(jsonData.data).to.be.an('array');",
                             "});"
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "name": "GET Single Category",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "http://127.0.0.1:8000/api/site/categories/{{category_slug}}",
+                    "protocol": "http",
+                    "host": [
+                        "127",
+                        "0",
+                        "0",
+                        "1"
+                    ],
+                    "port": "8000",
+                    "path": [
+                        "api",
+                        "site",
+                        "categories",
+                        "{{category_slug}}"
+                    ]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "var slug = pm.collectionVariables.get('category_slug');",
+                            "if (slug) {",
+                            "    pm.test(\"Status code is 200\", function () {",
+                            "        pm.response.to.have.status(200);",
+                            "    });",
+                            "    pm.test(\"Response has category data object\", function () {",
+                            "        var jsonData = pm.response.json();",
+                            "        pm.expect(jsonData.error).to.eql(false);",
+                            "        pm.expect(jsonData.data).to.be.an('object');",
+                            "        pm.expect(jsonData.data.articles).to.be.an('array');",
+                            "    });",
+                            "} else {",
+                            "    console.log('Skipping because no category_slug was found');",
+                            "}"
                         ]
                     }
                 }
@@ -145,9 +325,18 @@
                 "url": {
                     "raw": "http://127.0.0.1:8000/api/site/articles",
                     "protocol": "http",
-                    "host": ["127", "0", "0", "1"],
+                    "host": [
+                        "127",
+                        "0",
+                        "0",
+                        "1"
+                    ],
                     "port": "8000",
-                    "path": ["api", "site", "articles"]
+                    "path": [
+                        "api",
+                        "site",
+                        "articles"
+                    ]
                 }
             },
             "event": [
@@ -176,9 +365,18 @@
                 "url": {
                     "raw": "http://127.0.0.1:8000/api/site/authors",
                     "protocol": "http",
-                    "host": ["127", "0", "0", "1"],
+                    "host": [
+                        "127",
+                        "0",
+                        "0",
+                        "1"
+                    ],
                     "port": "8000",
-                    "path": ["api", "site", "authors"]
+                    "path": [
+                        "api",
+                        "site",
+                        "authors"
+                    ]
                 }
             },
             "event": [
@@ -210,9 +408,19 @@
                 "url": {
                     "raw": "http://127.0.0.1:8000/api/site/authors/{{author_slug}}",
                     "protocol": "http",
-                    "host": ["127", "0", "0", "1"],
+                    "host": [
+                        "127",
+                        "0",
+                        "0",
+                        "1"
+                    ],
                     "port": "8000",
-                    "path": ["api", "site", "authors", "{{author_slug}}"]
+                    "path": [
+                        "api",
+                        "site",
+                        "authors",
+                        "{{author_slug}}"
+                    ]
                 }
             },
             "event": [
@@ -239,6 +447,47 @@
             ]
         },
         {
+            "name": "GET Company Page",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "http://127.0.0.1:8000/api/site/company-pages/{{company_page_slug}}",
+                    "protocol": "http",
+                    "host": [
+                        "127",
+                        "0",
+                        "0",
+                        "1"
+                    ],
+                    "port": "8000",
+                    "path": [
+                        "api",
+                        "site",
+                        "company-pages",
+                        "{{company_page_slug}}"
+                    ]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "pm.test(\"Response has page data object\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.error).to.eql(false);",
+                            "    pm.expect(jsonData.data).to.be.an('object');",
+                            "});"
+                        ]
+                    }
+                }
+            ]
+        },
+        {
             "name": "GET Search",
             "request": {
                 "method": "GET",
@@ -246,9 +495,18 @@
                 "url": {
                     "raw": "http://127.0.0.1:8000/api/site/search?q=test",
                     "protocol": "http",
-                    "host": ["127", "0", "0", "1"],
+                    "host": [
+                        "127",
+                        "0",
+                        "0",
+                        "1"
+                    ],
                     "port": "8000",
-                    "path": ["api", "site", "search"],
+                    "path": [
+                        "api",
+                        "site",
+                        "search"
+                    ],
                     "query": [
                         {
                             "key": "q",
@@ -296,9 +554,18 @@
                 "url": {
                     "raw": "http://127.0.0.1:8000/api/site/contact",
                     "protocol": "http",
-                    "host": ["127", "0", "0", "1"],
+                    "host": [
+                        "127",
+                        "0",
+                        "0",
+                        "1"
+                    ],
                     "port": "8000",
-                    "path": ["api", "site", "contact"]
+                    "path": [
+                        "api",
+                        "site",
+                        "contact"
+                    ]
                 }
             },
             "event": [
@@ -339,9 +606,18 @@
                 "url": {
                     "raw": "http://127.0.0.1:8000/api/site/newsletter",
                     "protocol": "http",
-                    "host": ["127", "0", "0", "1"],
+                    "host": [
+                        "127",
+                        "0",
+                        "0",
+                        "1"
+                    ],
                     "port": "8000",
-                    "path": ["api", "site", "newsletter"]
+                    "path": [
+                        "api",
+                        "site",
+                        "newsletter"
+                    ]
                 }
             },
             "event": [
@@ -382,9 +658,18 @@
                 "url": {
                     "raw": "http://127.0.0.1:8000/api/site/search-query",
                     "protocol": "http",
-                    "host": ["127", "0", "0", "1"],
+                    "host": [
+                        "127",
+                        "0",
+                        "0",
+                        "1"
+                    ],
                     "port": "8000",
-                    "path": ["api", "site", "search-query"]
+                    "path": [
+                        "api",
+                        "site",
+                        "search-query"
+                    ]
                 }
             },
             "event": [
@@ -413,6 +698,18 @@
         {
             "key": "author_slug",
             "value": ""
+        },
+        {
+            "key": "category_slug",
+            "value": ""
+        },
+        {
+            "key": "share_code",
+            "value": ""
+        },
+        {
+            "key": "company_page_slug",
+            "value": "about-us"
         }
     ]
 }

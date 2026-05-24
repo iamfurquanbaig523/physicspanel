@@ -36,4 +36,9 @@ return [
         'gtm_container_id' => env('GTM_CONTAINER_ID'),
     ],
 
+    'frontend' => [
+        'revalidate_url' => env('FRONTEND_REVALIDATE_URL'),
+        'revalidate_secret' => env('FRONTEND_REVALIDATE_SECRET'),
+    ],
+
 ];

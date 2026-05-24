@@ -12,6 +12,8 @@ use App\Services\BootstrapTableService;
 use App\Services\CachingService;
 use App\Services\FileService;
 use App\Services\HelperService;
+use App\Services\ArticleShareLinkService;
+use App\Services\PublicContentCacheService;
 use App\Services\ResponseService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -97,6 +99,8 @@ class BlogController extends Controller
             $this->syncContributors($blog, $request);
             $this->syncArticleFaqs($blog, $request);
             $this->saveTranslations($request, $blog);
+            app(ArticleShareLinkService::class)->syncForBlog($blog);
+            PublicContentCacheService::invalidate();
 
             return redirect(route('blog.index'))->with('success', trans('Blog Added Successfully'));
         } catch (Throwable $th) {
@@ -232,6 +236,8 @@ class BlogController extends Controller
             $this->syncContributors($blog, $request);
             $this->syncArticleFaqs($blog, $request);
             $this->saveTranslations($request, $blog);
+            app(ArticleShareLinkService::class)->syncForBlog($blog);
+            PublicContentCacheService::invalidate();
 
             return redirect(route('blog.index'))->with('success', trans('Blog Updated Successfully'));
         } catch (Throwable $th) {
@@ -250,6 +256,7 @@ class BlogController extends Controller
             FileService::delete($blog->getRawOriginal('image'));
             $blog->translations()->delete();
             $blog->delete();
+            PublicContentCacheService::invalidate();
             ResponseService::successResponse('Blog delete successfully');
         } catch (Throwable $th) {
             ResponseService::logErrorResponse($th);

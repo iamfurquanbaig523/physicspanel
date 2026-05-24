@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Author;
 use App\Services\BootstrapTableService;
 use App\Services\FileService;
+use App\Services\PublicContentCacheService;
 use App\Services\ResponseService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -53,6 +54,7 @@ class AuthorController extends Controller
             }
 
             Author::create($data);
+            PublicContentCacheService::invalidate();
 
             return redirect(route('authors.index'))->with('success', trans('Author Added Successfully'));
         } catch (Throwable $th) {
@@ -133,6 +135,7 @@ class AuthorController extends Controller
             }
 
             $author->update($data);
+            PublicContentCacheService::invalidate();
 
             return redirect(route('authors.index'))->with('success', trans('Author Updated Successfully'));
         } catch (Throwable $th) {
@@ -149,6 +152,7 @@ class AuthorController extends Controller
         try {
             FileService::delete($author->getRawOriginal('avatar'));
             $author->delete();
+            PublicContentCacheService::invalidate();
             ResponseService::successResponse('Author deleted successfully');
         } catch (Throwable $th) {
             ResponseService::logErrorResponse($th);

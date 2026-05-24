@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CompanyPage;
 use App\Services\BootstrapTableService;
+use App\Services\PublicContentCacheService;
 use App\Services\ResponseService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -35,6 +36,7 @@ class CompanyPageController extends Controller
 
         try {
             CompanyPage::create($this->pageData($request));
+            PublicContentCacheService::invalidate();
 
             return redirect(route('company-pages.index'))->with('success', trans('Page Added Successfully'));
         } catch (Throwable $th) {
@@ -95,6 +97,7 @@ class CompanyPageController extends Controller
 
         try {
             $companyPage->update($this->pageData($request, $companyPage->id));
+            PublicContentCacheService::invalidate();
 
             return redirect(route('company-pages.index'))->with('success', trans('Page Updated Successfully'));
         } catch (Throwable $th) {
@@ -110,6 +113,7 @@ class CompanyPageController extends Controller
 
         try {
             $companyPage->delete();
+            PublicContentCacheService::invalidate();
             ResponseService::successResponse('Page deleted successfully');
         } catch (Throwable $th) {
             ResponseService::logErrorResponse($th);

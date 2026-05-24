@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('site')->group(function () {
     Route::get('settings', [PublicContentController::class, 'settings']);
+    Route::get('home-main-article', [PublicContentController::class, 'homeMainArticle']);
     Route::get('blogs', [PublicContentController::class, 'blogs']);
     Route::get('blogs/{slug}', [PublicContentController::class, 'blog']);
     Route::get('categories', [PublicContentController::class, 'categories']);

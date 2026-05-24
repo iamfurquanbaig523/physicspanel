@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Content;
 
 use App\Http\Controllers\Controller;
-use App\Models\ArticleShareLink;
 use App\Models\Author;
 use App\Models\Blog;
 use App\Models\Category;
@@ -13,6 +12,8 @@ use App\Models\ContactUs;
 use App\Models\NewsletterSubscriber;
 use App\Models\SearchQuery;
 use App\Models\Setting;
+use App\Services\ArticleShareLinkService;
+use App\Services\PublicContentCacheService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
@@ -23,18 +24,37 @@ class PublicContentController extends Controller
 
     public function settings()
     {
-        $siteUrl = rtrim($this->settingValue('website_url') ?: 'https://searchenginebasics.io', '/');
+        return $this->cachedJson('settings', function () {
+            $settings = $this->settingValues([
+                'website_url',
+                'company_name',
+                'company_email',
+                'google_site_verification',
+                'gtm_container_id',
+                'default_share_thumbnail',
+            ]);
+            $siteUrl = rtrim($settings['website_url'] ?: 'https://searchenginebasics.io', '/');
 
-        return response()->json([
+            return [
+                'error' => false,
+                'data' => [
+                    'brand_name' => $settings['company_name'] ?: 'Search Engine Basics',
+                    'domain' => 'searchenginebasics.io',
+                    'site_url' => $siteUrl,
+                    'contact_email' => $settings['company_email'] ?: 'hello@searchenginebasics.io',
+                    'google_site_verification' => $settings['google_site_verification'] ?: config('services.google.site_verification'),
+                    'gtm_container_id' => $settings['gtm_container_id'] ?: config('services.google.gtm_container_id'),
+                    'default_thumbnail' => $settings['default_share_thumbnail'],
+                ],
+            ];
+        });
+    }
+
+    public function homeMainArticle()
+    {
+        return $this->cachedJson('home-main-article', fn () => [
             'error' => false,
             'data' => [
-                'brand_name' => $this->settingValue('company_name') ?: 'Search Engine Basics',
-                'domain' => 'searchenginebasics.io',
-                'site_url' => $siteUrl,
-                'contact_email' => $this->settingValue('company_email') ?: 'hello@searchenginebasics.io',
-                'google_site_verification' => $this->settingValue('google_site_verification') ?: config('services.google.site_verification'),
-                'gtm_container_id' => $this->settingValue('gtm_container_id') ?: config('services.google.gtm_container_id'),
-                'default_thumbnail' => $this->settingValue('default_share_thumbnail'),
                 'home_main_article_markdown' => $this->settingValue('home_main_article_markdown'),
             ],
         ]);
@@ -42,119 +62,129 @@ class PublicContentController extends Controller
 
     public function blogs(Request $request)
     {
-        $query = Blog::with(['seriesCategory:id,name,slug,series_title,accent_color', 'author:id,name,slug,role,bio,avatar,status', 'updatedByAuthor:id,name,slug,role,bio,avatar,status', 'additionalAuthors', 'reviewers', 'editors'])
-            ->where('status', 'published')
-            ->when($request->boolean('featured'), fn ($q) => $q->where('is_featured', true))
-            ->when($request->filled('category'), function ($q) use ($request) {
-                $category = $request->input('category');
-                $q->whereHas('seriesCategory', function ($categoryQuery) use ($category) {
-                    $categoryQuery->where('slug', $category)->orWhere('name', $category);
-                });
-            })
-            ->when($request->filled('tag'), function ($q) use ($request) {
-                $tag = $request->input('tag');
-                $q->where(function ($tagQuery) use ($tag) {
-                    $tagQuery->where('tags', 'like', "%{$tag}%")
-                        ->orWhere('category', 'like', "%{$tag}%")
-                        ->orWhereHas('seriesCategory', function ($categoryQuery) use ($tag) {
-                            $categoryQuery->where('name', 'like', "%{$tag}%")
-                                ->orWhere('series_title', 'like', "%{$tag}%");
+        return $this->cachedJson($request->fullUrl(), function () use ($request) {
+            $query = Blog::with(['seriesCategory:id,name,slug,series_title,accent_color', 'author:id,name,slug,role,bio,avatar,status', 'updatedByAuthor:id,name,slug,role,bio,avatar,status', 'additionalAuthors', 'reviewers', 'editors', 'shareLinks'])
+                ->where('status', 'published')
+                ->when($request->boolean('featured'), fn ($q) => $q->where('is_featured', true))
+                ->when($request->filled('category'), function ($q) use ($request) {
+                    $category = $request->input('category');
+                    $q->whereHas('seriesCategory', function ($categoryQuery) use ($category) {
+                        $categoryQuery->where('slug', $category)->orWhere('name', $category);
+                    });
+                })
+                ->when($request->filled('tag'), function ($q) use ($request) {
+                    $tag = $request->input('tag');
+                    $q->where(function ($tagQuery) use ($tag) {
+                        $tagQuery->where('tags', 'like', "%{$tag}%")
+                            ->orWhere('category', 'like', "%{$tag}%")
+                            ->orWhereHas('seriesCategory', function ($categoryQuery) use ($tag) {
+                                $categoryQuery->where('name', 'like', "%{$tag}%")
+                                    ->orWhere('series_title', 'like', "%{$tag}%");
+                            });
                         });
-                });
-            })
-            ->when($request->filled('search'), function ($q) use ($request) {
-                $search = $request->input('search');
-                $q->where(function ($inner) use ($search) {
-                    $inner->where('title', 'like', "%{$search}%")
-                        ->orWhere('excerpt', 'like', "%{$search}%")
-                        ->orWhere('description', 'like', "%{$search}%")
-                        ->orWhere('tags', 'like', "%{$search}%");
-                });
-            })
-            ->orderByDesc('published_at')
-            ->orderByDesc('id');
+                })
+                ->when($request->filled('search'), function ($q) use ($request) {
+                    $search = $request->input('search');
+                    $q->where(function ($inner) use ($search) {
+                        $inner->where('title', 'like', "%{$search}%")
+                            ->orWhere('excerpt', 'like', "%{$search}%")
+                            ->orWhere('description', 'like', "%{$search}%")
+                            ->orWhere('tags', 'like', "%{$search}%");
+                    });
+                })
+                ->orderByDesc('published_at')
+                ->orderByDesc('id');
 
-        $perPage = min((int) $request->input('per_page', 12), 50);
-        $blogs = $query->paginate($perPage);
-        $blogs->getCollection()->transform(fn (Blog $blog) => $this->blogPayload($blog));
+            $perPage = min((int) $request->input('per_page', 12), 50);
+            $blogs = $query->paginate($perPage);
+            $blogs->getCollection()->transform(fn (Blog $blog) => $this->blogPayload($blog));
 
-        return response()->json([
-            'error' => false,
-            'data' => $blogs,
-        ]);
+            return [
+                'error' => false,
+                'data' => $blogs,
+            ];
+        });
     }
 
     public function blog(string $slug)
     {
-        $blog = Blog::with(['seriesCategory', 'author:id,name,slug,role,bio,avatar,status', 'updatedByAuthor:id,name,slug,role,bio,avatar,status', 'additionalAuthors', 'reviewers', 'editors', 'faqs'])
-            ->where('slug', $slug)
-            ->where('status', 'published')
-            ->firstOrFail();
+        return $this->cachedJson('blog:'.$slug, function () use ($slug) {
+            $blog = Blog::with(['seriesCategory', 'author:id,name,slug,role,bio,avatar,status', 'updatedByAuthor:id,name,slug,role,bio,avatar,status', 'additionalAuthors', 'reviewers', 'editors', 'faqs', 'shareLinks'])
+                ->where('slug', $slug)
+                ->where('status', 'published')
+                ->firstOrFail();
 
-        $blog->increment('views');
+            $seriesArticles = $blog->seriesCategory
+                ? $this->articlesForCategory($blog->seriesCategory, $blog->id)
+                : collect();
 
-        $seriesArticles = $blog->seriesCategory
-            ? $this->articlesForCategory($blog->seriesCategory, $blog->id)
-            : collect();
-
-        return response()->json([
-            'error' => false,
-            'data' => $this->blogPayload($blog, true),
-            'related' => $seriesArticles,
-            'seriesArticles' => $seriesArticles,
-        ]);
+            return [
+                'error' => false,
+                'data' => $this->blogPayload($blog, true),
+                'related' => $seriesArticles,
+                'seriesArticles' => $seriesArticles,
+            ];
+        });
     }
 
     public function authors()
     {
-        $authors = Author::withCount(['blogs' => fn ($q) => $q->where('status', 'published')])
-            ->where('status', true)
-            ->orderBy('name')
-            ->get();
+        return $this->cachedJson('authors', function () {
+            $authors = Author::withCount(['blogs' => fn ($q) => $q->where('status', 'published')])
+                ->where('status', true)
+                ->orderBy('name')
+                ->get();
 
-        return response()->json([
-            'error' => false,
-            'data' => $authors,
-        ]);
+            return [
+                'error' => false,
+                'data' => $authors,
+            ];
+        });
     }
 
     public function author(string $slug)
     {
-        $author = Author::with([
-            'blogs' => fn ($q) => $this->publishedArticleQuery($q),
-            'contributedBlogs' => fn ($q) => $this->publishedArticleQuery($q),
-        ])
-            ->where('slug', $slug)
-            ->where('status', true)
-            ->firstOrFail();
+        return $this->cachedJson('author:'.$slug, function () use ($slug) {
+            $author = Author::with([
+                'blogs' => fn ($q) => $this->publishedArticleQuery($q)->with('shareLinks'),
+                'contributedBlogs' => fn ($q) => $this->publishedArticleQuery($q)->with('shareLinks'),
+            ])
+                ->where('slug', $slug)
+                ->where('status', true)
+                ->firstOrFail();
 
-        $articles = $author->blogs
-            ->merge($author->contributedBlogs)
-            ->unique('id')
-            ->sortBy('sort_order')
-            ->values()
-            ->map(fn (Blog $blog) => $this->blogPayload($blog));
+            $articles = $author->blogs
+                ->merge($author->contributedBlogs)
+                ->unique('id')
+                ->sortBy('sort_order')
+                ->values()
+                ->map(fn (Blog $blog) => $this->blogPayload($blog));
+            $authorData = $author->toArray();
+            unset($authorData['blogs'], $authorData['contributed_blogs']);
 
-        return response()->json([
-            'error' => false,
-            'data' => array_merge($author->toArray(), [
-                'articles' => $articles,
-            ]),
-        ]);
+            return [
+                'error' => false,
+                'data' => array_merge($authorData, [
+                    'articles' => $articles,
+                ]),
+            ];
+        });
     }
 
     public function companyPage(string $slug)
     {
-        $page = CompanyPage::where(function ($q) use ($slug) {
-            $q->where('slug', $slug)->orWhere('page_key', $slug);
-        })
-            ->where('status', true)
-            ->firstOrFail();
+        return $this->cachedJson('company-page:'.$slug, function () use ($slug) {
+            $page = CompanyPage::where(function ($q) use ($slug) {
+                $q->where('slug', $slug)->orWhere('page_key', $slug);
+            })
+                ->where('status', true)
+                ->firstOrFail();
 
-        return response()->json([
-            'error' => false,
-            'data' => $page,
-        ]);
+            return [
+                'error' => false,
+                'data' => $page,
+            ];
+        });
     }
 
     public function storeContact(Request $request)
@@ -283,75 +313,83 @@ class PublicContentController extends Controller
 
     public function categories()
     {
-        $categories = Category::with(['blogs' => fn ($q) => $this->publishedArticleQuery($q)])
-            ->where('status', true)
-            ->orderBy('sequence')
-            ->orderBy('header_nav_order')
-            ->orderBy('id')
-            ->get();
+        return $this->cachedJson('categories', function () {
+            $categories = Category::with(['blogs' => fn ($q) => $this->publishedArticleQuery($q)])
+                ->where('status', true)
+                ->orderBy('sequence')
+                ->orderBy('header_nav_order')
+                ->orderBy('id')
+                ->get();
 
-        return response()->json([
-            'error' => false,
-            'data' => $categories->map(fn (Category $category) => $this->categoryPayload($category)),
-        ]);
+            return [
+                'error' => false,
+                'data' => $categories->map(fn (Category $category) => $this->categoryPayload($category)),
+            ];
+        });
     }
 
     public function category($slug)
     {
-        $category = Category::with(['blogs' => fn ($q) => $this->publishedArticleQuery($q)])
-            ->where('slug', $slug)
-            ->where('status', true)
-            ->first();
+        return $this->cachedJson('category:'.$slug, function () use ($slug) {
+            $category = Category::with(['blogs' => fn ($q) => $this->publishedArticleQuery($q)])
+                ->where('slug', $slug)
+                ->where('status', true)
+                ->first();
 
-        if (! $category) {
-            return response()->json(['error' => true, 'message' => 'Category not found'], 404);
-        }
+            if (! $category) {
+                return ['error' => true, 'message' => 'Category not found', '_status' => 404];
+            }
 
-        return response()->json([
-            'error' => false,
-            'data' => $this->categoryPayload($category),
-        ]);
+            return [
+                'error' => false,
+                'data' => $this->categoryPayload($category),
+            ];
+        });
     }
 
     public function articles(Request $request)
     {
-        $query = \App\Models\Blog::with('author:id,name,slug,role,bio,avatar,status')
-            ->where('status', 'published')
-            ->orderByDesc('id');
+        return $this->cachedJson($request->fullUrl(), function () use ($request) {
+            $query = \App\Models\Blog::with(['author:id,name,slug,role,bio,avatar,status', 'shareLinks'])
+                ->where('status', 'published')
+                ->orderByDesc('id');
 
-        $perPage = min((int) $request->input('per_page', 50), 100);
-        $articles = $query->paginate($perPage);
-        $articles->getCollection()->transform(fn (\App\Models\Blog $blog) => $this->blogPayload($blog));
+            $perPage = min((int) $request->input('per_page', 50), 100);
+            $articles = $query->paginate($perPage);
+            $articles->getCollection()->transform(fn (\App\Models\Blog $blog) => $this->blogPayload($blog));
 
-        return response()->json([
-            'error' => false,
-            'data' => $articles,
-        ]);
+            return [
+                'error' => false,
+                'data' => $articles,
+            ];
+        });
     }
 
     public function search(Request $request)
     {
-        $query = Blog::with(['seriesCategory:id,name,slug,series_title,accent_color', 'author:id,name,slug,role,bio,avatar,status'])
-            ->where('status', 'published');
+        return $this->cachedJson($request->fullUrl(), function () use ($request) {
+            $query = Blog::with(['seriesCategory:id,name,slug,series_title,accent_color', 'author:id,name,slug,role,bio,avatar,status', 'shareLinks'])
+                ->where('status', 'published');
 
-        if ($request->filled('q')) {
-            $search = $request->input('q');
-            $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                    ->orWhere('excerpt', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%")
-                    ->orWhere('tags', 'like', "%{$search}%");
-            });
-        }
+            if ($request->filled('q')) {
+                $search = $request->input('q');
+                $query->where(function ($q) use ($search) {
+                    $q->where('title', 'like', "%{$search}%")
+                        ->orWhere('excerpt', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%")
+                        ->orWhere('tags', 'like', "%{$search}%");
+                });
+            }
 
-        $perPage = min((int) $request->input('per_page', 20), 50);
-        $results = $query->orderByDesc('published_at')->paginate($perPage);
-        $results->getCollection()->transform(fn (Blog $blog) => $this->blogPayload($blog));
+            $perPage = min((int) $request->input('per_page', 20), 50);
+            $results = $query->orderByDesc('published_at')->paginate($perPage);
+            $results->getCollection()->transform(fn (Blog $blog) => $this->blogPayload($blog));
 
-        return response()->json([
-            'error' => false,
-            'data' => $results,
-        ]);
+            return [
+                'error' => false,
+                'data' => $results,
+            ];
+        });
     }
 
     private function publishedArticleQuery($query)
@@ -488,77 +526,46 @@ class PublicContentController extends Controller
 
     public function shareLink(string $code)
     {
-        $shareLink = ArticleShareLink::where('code', $code)
-            ->where('is_active', true)
-            ->firstOrFail();
+        return $this->cachedJson('share-link:'.$code, function () use ($code) {
+            $shareLink = \App\Models\ArticleShareLink::where('code', $code)
+                ->where('is_active', true)
+                ->firstOrFail();
 
-        $shareLink->increment('click_count');
-
-        return response()->json([
-            'error' => false,
-            'data' => [
-                'targetUrl' => $shareLink->target_url,
-                'platform' => $shareLink->platform,
-            ],
-        ]);
+            return [
+                'error' => false,
+                'data' => [
+                    'targetUrl' => $shareLink->target_url,
+                    'platform' => $shareLink->platform,
+                ],
+            ];
+        });
     }
 
     private function shareLinksForBlog(Blog $blog): array
     {
-        $siteUrl = rtrim($this->settingValue('website_url') ?: 'https://searchenginebasics.io', '/');
-        $categorySlug = $blog->seriesCategory?->slug;
-        $targetPath = $categorySlug ? '/'.$categorySlug.'/'.$blog->slug : '/'.$blog->slug;
-        $targetUrl = $siteUrl.$targetPath;
-        $links = [];
-
-        foreach (self::SHARE_PLATFORMS as $platform) {
-            $shareLink = ArticleShareLink::firstOrCreate(
-                ['blog_id' => $blog->id, 'platform' => $platform],
-                [
-                    'code' => $this->uniqueShareCode($blog, $platform),
-                    'target_url' => $targetUrl,
-                    'is_active' => true,
-                ]
-            );
-
-            $updates = [];
-            if ($shareLink->target_url !== $targetUrl) {
-                $updates['target_url'] = $targetUrl;
-            }
-            if (! $shareLink->is_active) {
-                $updates['is_active'] = true;
-            }
-            if (strlen($shareLink->code) > 10) {
-                $updates['code'] = $this->uniqueShareCode($blog, $platform, $shareLink->id);
-            }
-
-            if (! empty($updates)) {
-                $shareLink->update($updates);
-            }
-
-            $links[$platform] = [
-                'shortUrl' => $siteUrl.'/s/'.$shareLink->code,
-                'targetUrl' => $targetUrl,
-            ];
-        }
-
-        return $links;
+        return app(ArticleShareLinkService::class)->linksForBlog($blog);
     }
 
-    private function uniqueShareCode(Blog $blog, string $platform, ?int $ignoreId = null): string
+    private function cachedJson(string $key, callable $callback, int $seconds = 300)
     {
-        $platformPrefix = substr(preg_replace('/[^a-z0-9]/i', '', $platform) ?: 's', 0, 1);
-        $blogKey = base_convert((string) $blog->id, 10, 36);
-        $hash = substr(hash('crc32b', $blog->slug.'|'.$platform), 0, 4);
-        $base = Str::lower($platformPrefix.$blogKey.$hash);
-        $code = $base;
-        $counter = 2;
+        $payload = PublicContentCacheService::remember($key, $callback, $seconds);
+        $status = 200;
 
-        while (ArticleShareLink::where('code', $code)->when($ignoreId, fn ($query) => $query->where('id', '!=', $ignoreId))->exists()) {
-            $code = $base.base_convert((string) $counter++, 10, 36);
+        if (is_array($payload) && isset($payload['_status'])) {
+            $status = (int) $payload['_status'];
+            unset($payload['_status']);
         }
 
-        return $code;
+        return response()
+            ->json($payload, $status)
+            ->header('Cache-Control', PublicContentCacheService::cacheControl($seconds));
+    }
+
+    private function settingValues(array $names): array
+    {
+        $values = Setting::whereIn('name', $names)->get()->pluck('value', 'name')->all();
+
+        return array_merge(array_fill_keys($names, null), $values);
     }
 
     private function settingValue(string $name): ?string

@@ -11,6 +11,8 @@ use App\Services\BootstrapTableService;
 use App\Services\CachingService;
 use App\Services\FileService;
 use App\Services\HelperService;
+use App\Services\ArticleShareLinkService;
+use App\Services\PublicContentCacheService;
 use App\Services\ResponseService;
 use DB;
 use Illuminate\Database\QueryException;
@@ -140,6 +142,8 @@ class CategoryController extends Controller {
                 }
             }
 
+            app(ArticleShareLinkService::class)->syncAllPublished();
+            PublicContentCacheService::invalidate();
             ResponseService::successRedirectResponse("Category Added Successfully");
         } catch (Throwable $th) {
             ResponseService::logErrorRedirect($th);
@@ -376,6 +380,8 @@ class CategoryController extends Controller {
                 );
             }
 
+            app(ArticleShareLinkService::class)->syncAllPublished();
+            PublicContentCacheService::invalidate();
             ResponseService::successRedirectResponse("Category Updated Successfully", route('category.index'));
         } catch (Throwable $th) {
             ResponseService::logErrorRedirect($th);
@@ -452,6 +458,7 @@ class CategoryController extends Controller {
         }
 
         $category->delete();
+        PublicContentCacheService::invalidate();
 
         return ResponseService::successResponse('Category deleted successfully');
 
@@ -571,6 +578,7 @@ class CategoryController extends Controller {
             ];
         }
         Category::upsert($data, ['id'], ['sequence']);
+        PublicContentCacheService::invalidate();
         ResponseService::successResponse("Order Updated Successfully");
         } catch (Throwable $th) {
             ResponseService::logErrorRedirect($th);
