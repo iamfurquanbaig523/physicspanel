@@ -84,7 +84,7 @@
                                                 <div class="col-md-6">
                                                     <div class="col-md-12 form-group mandatory">
                                                         <label for="Field Name" class="mandatory form-label">{{ __('Image') }}</label>
-                                                        <input type="file" name="image" id="image" class="form-control" accept=".jpg,.jpeg,.png,.webp">
+                                                        <input type="file" name="image" id="image" class="form-control" accept=".jpg,.jpeg,.png,.webp,.avif">
                                                     </div>
                                                 </div>
 

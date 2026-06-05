@@ -184,7 +184,7 @@
                     @if($blog?->image)
                         <img src="{{ $blog->image }}" alt="{{ $blog->title }}" style="max-height: 80px;" class="d-block mb-2">
                     @endif
-                    <input type="file" name="image" class="form-control" accept=".jpg,.jpeg,.png,.webp">
+                    <input type="file" name="image" class="form-control" accept=".jpg,.jpeg,.png,.webp,.avif">
                 </div>
             </div>
             <div class="col-md-6 d-flex align-items-center">
@@ -427,6 +427,22 @@
                 .block-equation::before { content: ""; display: none; }
                 .block-equation, .block-equation p, .block-equation div, .block-equation span, .block-equation code, .block-equation pre { color: #00FF88 !important; font-family: 'DM Mono', monospace !important; }
                 .block-equation p, .block-equation div { line-height: 1.8; }
+                .block-code { border-color: rgba(82, 134, 214, 0.62); background: #060A12; border-radius: 10px; box-shadow: inset 0 0 0 1px rgba(122, 167, 255, 0.08), 0 18px 44px rgba(0, 0, 0, 0.22); color: #D4D4D4; font-family: 'DM Mono', monospace; font-size: 0.88rem; line-height: 1.75; overflow-x: auto; padding: 0; position: relative; tab-size: 2; white-space: pre; }
+                .block-code::before { content: ""; background: linear-gradient(180deg, rgba(17, 24, 39, 0.96), rgba(10, 15, 28, 0.96)); border-bottom: 1px solid rgba(122, 167, 255, 0.18); display: block; height: 2.85rem; margin: 0; padding: 0; }
+                .block-code::after { content: ""; position: absolute; top: 1.15rem; left: 1.1rem; width: 0.55rem; height: 0.55rem; border-radius: 999px; background: #FF5F56; box-shadow: 0.95rem 0 #FFBD2E, 1.9rem 0 #27C93F; }
+                .block-code code, .block-code pre, .block-code p { color: #D4D4D4 !important; font-family: 'DM Mono', monospace !important; }
+                .block-code code { background: #0D1117; display: block; min-width: max-content; padding: 1.1rem 1.35rem 1.25rem; white-space: pre; }
+                .block-code .code-line { display: block; min-height: 1.75em; padding-left: 3rem; position: relative; }
+                .block-code .code-line::before { color: #4D5B73; content: counter(code-line); counter-increment: code-line; left: 0; position: absolute; text-align: right; user-select: none; width: 1.75rem; }
+                .block-code code { counter-reset: code-line; }
+                .block-code .code-keyword { color: #C586C0 !important; }
+                .block-code .code-string { color: #CE9178 !important; }
+                .block-code .code-comment { color: #6A9955 !important; font-style: italic; }
+                .block-code .code-number { color: #B5CEA8 !important; }
+                .block-code .code-literal { color: #569CD6 !important; }
+                .block-code .code-tag { color: #569CD6 !important; }
+                .block-code .code-property { color: #9CDCFE !important; }
+                .block-code .code-punctuation { color: #D4D4D4 !important; }
                 .citation-cluster { display: inline-flex; vertical-align: super; margin-left: .12rem; }
                 .citation-ref { color: #B8FF35 !important; text-decoration: none; font-family: 'DM Mono', monospace; font-size: .78em; }
                 .citation-ref sup { color: #B8FF35 !important; }
@@ -447,12 +463,13 @@
                 menubar: false,
                 plugins: 'lists link table code wordcount',
                 toolbar_mode: 'wrap',
-                toolbar: 'undo redo | formatselect styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist | link table imageUpload | citationButton sourceButton equationBlock htmlBlock | removeformat | code',
+                toolbar: 'undo redo | formatselect styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist | link table imageUpload | citationButton sourceButton equationBlock codeBlock htmlBlock clearFormatting | removeformat | code',
                 block_formats: 'Paragraph=p; Heading 2=h2; Heading 3=h3; Heading 4=h4; Heading 5=h5; Heading 6=h6',
-                extended_valid_elements: 'section[class|id],ol[class|id],li[class|id],a[class|href|title],span[class|style],sup[class],div[class|style|data-html-block|contenteditable],img[src|alt|title|width|height|style|class|loading]',
-                valid_children: '+a[span|sup],+span[a|span|sup]',
+                extended_valid_elements: 'section[class|id],ol[class|id],li[class|id],a[class|href|title|target|rel],span[class|style|data-href],sup[class],pre[class|id],code[class],div[class|style|data-html-block|contenteditable],img[src|alt|title|width|height|style|class|loading]',
+                valid_children: '+a[span|sup],+span[a|span|sup],+pre[code],+code[span]',
                 formats: {
-                    equationBlock: { block: 'div', classes: 'custom-block block-equation', wrapper: true }
+                    equationBlock: { block: 'div', classes: 'custom-block block-equation', wrapper: true },
+                    codeBlock: { block: 'pre', classes: 'custom-block block-code', wrapper: true }
                 },
                 style_formats: [
                     { title: 'Headers', items: [
@@ -470,6 +487,7 @@
                         { title: 'Myth', block: 'div', classes: 'custom-block block-myth', wrapper: true },
                         { title: 'Problem', block: 'div', classes: 'custom-block block-problem', wrapper: true },
                         { title: 'Equation / Formula', format: 'equationBlock' },
+                        { title: 'Code Block', format: 'codeBlock' },
                         { title: 'HTML Block', block: 'div', classes: 'custom-html-block', wrapper: true }
                     ]}
                 ],
@@ -487,6 +505,245 @@
                         });
                     }
 
+                    function highlightCodeLine(value) {
+                        const keywords = /^(async|await|break|case|catch|class|const|continue|def|default|delete|do|elif|else|except|export|extends|finally|for|from|function|if|import|in|interface|let|new|return|try|type|var|while|with|yield)$/;
+                        const literals = /^(false|null|none|self|this|true|undefined|False|None|True)$/;
+                        const tokenPattern = /(&lt;\/?[a-zA-Z][^&]*?&gt;|\/\*[\s\S]*?\*\/|\/\/[^\n]*|#[^\n]*|&quot;(?:\\.|(?!&quot;).)*&quot;|&#039;(?:\\.|(?!&#039;).)*&#039;|`(?:\\.|[^`\\])*`|\b[A-Za-z_$][\w$]*(?=\s*:)|\b[A-Za-z_$][\w$]*\b|\b\d+(?:\.\d+)?\b|&lt;=?|&gt;=?|&amp;&amp;|\|\||[{}()[\],.;:+\-*/=%!&|?])/g;
+
+                        return escapeHtml(value).replace(tokenPattern, function (token) {
+                            let className = 'code-punctuation';
+
+                            if (/^(\/\*|\/\/|#)/.test(token)) {
+                                className = 'code-comment';
+                            } else if (/^(&quot;|&#039;|`)/.test(token)) {
+                                className = 'code-string';
+                            } else if (/^&lt;\/?[a-zA-Z]/.test(token)) {
+                                className = 'code-tag';
+                            } else if (/^\d/.test(token)) {
+                                className = 'code-number';
+                            } else if (keywords.test(token)) {
+                                className = 'code-keyword';
+                            } else if (literals.test(token)) {
+                                className = 'code-literal';
+                            } else if (/^[A-Za-z_$][\w$]*$/.test(token)) {
+                                className = 'code-property';
+                            }
+
+                            return '<span class="code-token ' + className + '">' + token + '</span>';
+                        });
+                    }
+
+                    function highlightCode(value) {
+                        return String(value || '')
+                            .replace(/\r\n?/g, '\n')
+                            .split('\n')
+                            .map(function (line) {
+                                return '<span class="code-line">' + highlightCodeLine(line || ' ') + '</span>';
+                            })
+                            .join('\n');
+                    }
+
+                    function highlightCodeBlocks() {
+                        editor.getBody().querySelectorAll('pre.block-code code').forEach(function (codeElement) {
+                            codeElement.innerHTML = highlightCode(codeElement.textContent || '');
+                        });
+                    }
+
+                    function insertCodeBlock() {
+                        const existingBlock = editor.dom.getParent(editor.selection.getNode(), 'pre.block-code');
+
+                        if (existingBlock) {
+                            editor.selection.select(existingBlock);
+                            editor.nodeChanged();
+                            return;
+                        }
+
+                        const selectedText = editor.selection.getContent({ format: 'text' }).replace(/\u00a0/g, ' ');
+                        const code = selectedText.trim() ? selectedText : '// Write code here';
+                        const blockId = 'seb-code-' + Date.now();
+                        const cursorId = 'seb-code-cursor-' + Date.now();
+                        editor.insertContent('<pre id="' + blockId + '" class="custom-block block-code"><code>' + highlightCode(code) + '</code></pre><p id="' + cursorId + '"><br></p>');
+
+                        const cursor = editor.dom.get(cursorId);
+
+                        if (cursor) {
+                            editor.dom.setAttrib(cursor, 'id', null);
+                            editor.selection.setCursorLocation(cursor, 0);
+                            editor.nodeChanged();
+                        }
+
+                        editor.save();
+                    }
+
+                    function plainTextHtml(value, forceParagraphs) {
+                        const normalized = String(value || '').replace(/\r\n?/g, '\n').replace(/\u00a0/g, ' ');
+
+                        if (!forceParagraphs) {
+                            return escapeHtml(normalized).replace(/\n/g, '<br>');
+                        }
+
+                        return normalized
+                            .split(/\n{2,}/)
+                            .map(function (paragraph) {
+                                const cleanParagraph = paragraph.trim() ? paragraph : ' ';
+                                return '<p>' + escapeHtml(cleanParagraph).replace(/\n/g, '<br>') + '</p>';
+                            })
+                            .join('');
+                    }
+
+                    function rangeIntersectsNode(range, node) {
+                        try {
+                            return range.intersectsNode(node);
+                        } catch (e) {
+                            return false;
+                        }
+                    }
+
+                    function hasDirectListItems(list) {
+                        return Array.from(list.children).some(function (child) {
+                            return child.matches && child.matches('li');
+                        });
+                    }
+
+                    function directListItemText(item) {
+                        const clone = item.cloneNode(true);
+                        clone.querySelectorAll('ul,ol').forEach(function (nestedList) {
+                            nestedList.remove();
+                        });
+
+                        return (clone.textContent || '').replace(/\s+/g, ' ').trim();
+                    }
+
+                    function appendClonedList(fragment, sourceList, items) {
+                        if (!items.length) {
+                            return;
+                        }
+
+                        const clonedList = sourceList.cloneNode(false);
+                        items.forEach(function (item) {
+                            clonedList.appendChild(item.cloneNode(true));
+                        });
+                        fragment.appendChild(clonedList);
+                    }
+
+                    function appendPlainParagraphs(fragment, lines) {
+                        const container = editor.getDoc().createElement('div');
+                        container.innerHTML = lines
+                            .map(function (line) {
+                                return '<p>' + escapeHtml(line || ' ') + '</p>';
+                            })
+                            .join('');
+
+                        while (container.firstChild) {
+                            fragment.appendChild(container.firstChild);
+                        }
+                    }
+
+                    function selectedListItems() {
+                        const range = editor.selection.getRng();
+                        const rawItems = Array.from(editor.getBody().querySelectorAll('li')).filter(function (item) {
+                            return rangeIntersectsNode(range, item);
+                        });
+                        const selectedSet = new Set(rawItems);
+
+                        return rawItems.filter(function (item) {
+                            let parent = item.parentElement ? item.parentElement.closest('li') : null;
+
+                            while (parent) {
+                                if (selectedSet.has(parent)) {
+                                    return false;
+                                }
+
+                                parent = parent.parentElement ? parent.parentElement.closest('li') : null;
+                            }
+
+                            return true;
+                        });
+                    }
+
+                    function flattenSelectedLists() {
+                        const items = selectedListItems();
+
+                        if (!items.length) {
+                            return false;
+                        }
+
+                        const groups = new Map();
+
+                        items.forEach(function (item) {
+                            const list = item.parentElement;
+
+                            if (!list || !list.matches('ul,ol')) {
+                                return;
+                            }
+
+                            if (!groups.has(list)) {
+                                groups.set(list, []);
+                            }
+
+                            groups.get(list).push(item);
+                        });
+
+                        groups.forEach(function (groupItems, list) {
+                            const directItems = Array.from(list.children).filter(function (child) {
+                                return child.matches && child.matches('li');
+                            });
+                            const selectedSet = new Set(groupItems);
+                            const firstSelectedIndex = directItems.findIndex(function (item) {
+                                return selectedSet.has(item);
+                            });
+                            const lastSelectedIndex = directItems.reduce(function (lastIndex, item, index) {
+                                return selectedSet.has(item) ? index : lastIndex;
+                            }, -1);
+
+                            if (firstSelectedIndex < 0 || lastSelectedIndex < firstSelectedIndex) {
+                                return;
+                            }
+
+                            const beforeItems = directItems.slice(0, firstSelectedIndex);
+                            const selectedItems = directItems.slice(firstSelectedIndex, lastSelectedIndex + 1);
+                            const afterItems = directItems.slice(lastSelectedIndex + 1);
+                            const plainLines = selectedItems.map(directListItemText).filter(function (line) {
+                                return line.length > 0;
+                            });
+                            const fragment = editor.getDoc().createDocumentFragment();
+
+                            appendClonedList(fragment, list, beforeItems);
+                            appendPlainParagraphs(fragment, plainLines.length ? plainLines : [' ']);
+                            appendClonedList(fragment, list, afterItems);
+
+                            list.parentNode.replaceChild(fragment, list);
+                        });
+
+                        editor.save();
+                        editor.nodeChanged();
+                        return true;
+                    }
+
+                    function clearSelectedFormatting() {
+                        const selectedText = editor.selection.getContent({ format: 'text' });
+
+                        if (!selectedText) {
+                            editor.execCommand('RemoveFormat');
+                            editor.save();
+                            editor.nodeChanged();
+                            return;
+                        }
+
+                        if (flattenSelectedLists()) {
+                            return;
+                        }
+
+                        const selectedHtml = editor.selection.getContent({ format: 'html' });
+                        const selectedHasBlock = /<\/?(p|h[1-6]|div|section|blockquote|pre|ul|ol|li|table|tr|td|th)\b/i.test(selectedHtml);
+                        const currentBlock = editor.dom.getParent(editor.selection.getNode(), 'h1,h2,h3,h4,h5,h6,pre,blockquote,div.custom-block');
+                        const selectedCoversBlock = currentBlock && selectedText.trim() === (currentBlock.textContent || '').replace(/\u00a0/g, ' ').trim();
+
+                        editor.insertContent(plainTextHtml(selectedText, selectedHasBlock || selectedCoversBlock));
+                        editor.save();
+                        editor.nodeChanged();
+                    }
+
                     function encodeHtmlBlock(value) {
                         return btoa(unescape(encodeURIComponent(value || '')));
                     }
@@ -502,7 +759,7 @@
                     function uploadImageAtSelection() {
                         const input = document.createElement('input');
                         input.type = 'file';
-                        input.accept = 'image/jpeg,image/png,image/webp';
+                        input.accept = 'image/jpeg,image/png,image/webp,image/avif,.avif';
 
                         input.addEventListener('change', function () {
                             const file = input.files && input.files[0];
@@ -564,10 +821,43 @@
                         return editor.getBody().querySelector('section.article-sources');
                     }
 
-                    function findSourceItem(section, sourceId) {
-                        return Array.from(section.querySelectorAll('li[id]')).find(function (item) {
+                    function findSourceItem(section, sourceId, sourceNumber) {
+                        const items = Array.from(section.querySelectorAll('li[id]'));
+                        return items.find(function (item) {
                             return item.id === sourceId;
+                        }) || items.find(function (item) {
+                            return item.id === 'source-' + sourceNumber || item.id.endsWith('-' + sourceNumber);
                         });
+                    }
+
+                    function sourceCitationHtml(citation, url, linkText) {
+                        const citationValue = String(citation || '').trim() || 'Source';
+                        const urlValue = String(url || '').trim();
+                        const linkValue = String(linkText || '').trim();
+
+                        if (!urlValue) {
+                            return escapeHtml(citationValue);
+                        }
+
+                        if (linkValue) {
+                            const linkIndex = citationValue.toLowerCase().indexOf(linkValue.toLowerCase());
+
+                            if (linkIndex !== -1) {
+                                const before = citationValue.slice(0, linkIndex);
+                                const matched = citationValue.slice(linkIndex, linkIndex + linkValue.length);
+                                const after = citationValue.slice(linkIndex + linkValue.length);
+
+                                return escapeHtml(before)
+                                    + '<a href="' + escapeHtml(urlValue) + '" target="_blank" rel="noopener noreferrer">'
+                                    + escapeHtml(matched)
+                                    + '</a>'
+                                    + escapeHtml(after);
+                            }
+                        }
+
+                        return '<a href="' + escapeHtml(urlValue) + '" target="_blank" rel="noopener noreferrer">'
+                            + escapeHtml(citationValue)
+                            + '</a>';
                     }
 
                     function ensureSourceSection(heading) {
@@ -680,7 +970,12 @@
                                         {
                                             type: 'input',
                                             name: 'url',
-                                            label: 'Source URL (optional — shown as clickable link)'
+                                            label: 'Source URL (optional)'
+                                        },
+                                        {
+                                            type: 'input',
+                                            name: 'linkText',
+                                            label: 'Linked title text (optional)'
                                         }
                                     ]
                                 },
@@ -688,7 +983,8 @@
                                     heading: sourceSection()?.querySelector('h2')?.textContent?.trim() || 'Sources',
                                     number: '',
                                     citation: '',
-                                    url: ''
+                                    url: '',
+                                    linkText: ''
                                 },
                                 buttons: [
                                     { type: 'cancel', text: 'Cancel' },
@@ -705,17 +1001,15 @@
                                     const section = ensureSourceSection(String(data.heading || 'Sources').trim() || 'Sources');
                                     const sourceId = defaultSourceTarget(sourceNumber);
                                     const ol = section.querySelector('ol');
-                                    let item = findSourceItem(section, sourceId);
+                                    let item = findSourceItem(section, sourceId, sourceNumber);
 
                                     if (!item) {
                                         item = editor.dom.create('li', { id: sourceId });
                                         ol.appendChild(item);
                                     }
 
-                                    const url = String(data.url || '').trim();
-                                    const citationText = escapeHtml(data.citation || 'Source ' + sourceNumber);
-                                    const linkHtml = url ? ' <a href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer">[link]</a>' : '';
-                                    item.innerHTML = '<p>' + citationText + linkHtml + '</p>';
+                                    const citationHtml = sourceCitationHtml(data.citation || 'Source ' + sourceNumber, data.url, data.linkText);
+                                    item.innerHTML = '<p>' + citationHtml + '</p>';
                                     editor.selection.select(item);
                                     editor.save();
                                     api.close();
@@ -738,6 +1032,27 @@
                             editor.save();
                         }
                     });
+
+                    editor.ui.registry.addToggleButton('codeBlock', {
+                        text: 'Code Block',
+                        tooltip: 'Turn selected text into a code block',
+                        onAction: insertCodeBlock,
+                        onSetup: function (buttonApi) {
+                            if (editor.selection.selectorChangedWithUnbind) {
+                                return editor.selection.selectorChangedWithUnbind('pre.block-code', buttonApi.setActive).unbind;
+                            }
+
+                            return function () {};
+                        }
+                    });
+
+                    editor.ui.registry.addButton('clearFormatting', {
+                        text: 'Clear Format',
+                        tooltip: 'Remove all formatting from selected text',
+                        onAction: clearSelectedFormatting
+                    });
+
+                    editor.on('init SetContent', highlightCodeBlocks);
 
                     editor.ui.registry.addButton('htmlBlock', {
                         text: 'HTML',

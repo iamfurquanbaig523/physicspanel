@@ -43,7 +43,7 @@
                     @if($author?->avatar_url)
                         <img src="{{ $author->avatar_url }}" alt="{{ $author->name }}" style="max-height: 70px;" class="d-block mb-2">
                     @endif
-                    <input type="file" name="avatar" class="form-control" accept=".jpg,.jpeg,.png,.webp">
+                    <input type="file" name="avatar" class="form-control" accept=".jpg,.jpeg,.png,.webp,.avif">
                 </div>
             </div>
             <div class="col-md-4">

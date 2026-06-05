@@ -166,7 +166,7 @@ class AuthorController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255', Rule::unique('authors', 'slug')->ignore($ignoreId)],
             'email' => ['nullable', 'email', 'max:255'],
-            'avatar' => ['nullable', 'mimes:jpg,jpeg,png,webp', 'max:7168'],
+            'avatar' => ['nullable', 'mimes:jpg,jpeg,png,webp,avif', 'max:7168'],
         ];
     }
 

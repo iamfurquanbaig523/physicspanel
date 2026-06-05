@@ -269,7 +269,7 @@ class BlogController extends Controller
         ResponseService::noAnyPermissionThenSendJson(['blog-create', 'blog-update']);
 
         $request->validate([
-            'image' => ['required', 'mimes:jpg,jpeg,png,webp', 'max:7168'],
+            'image' => ['required', 'mimes:jpg,jpeg,png,webp,avif', 'max:7168'],
         ]);
 
         $path = FileService::compressAndUpload($request->file('image'), 'blog/editor');
@@ -296,7 +296,7 @@ class BlogController extends Controller
             'author_id' => ['nullable', 'exists:authors,id'],
             'updated_on' => ['nullable', 'date'],
             'updated_by_author_id' => ['nullable', 'exists:authors,id'],
-            'image' => ['nullable', 'mimes:jpg,jpeg,png,webp', 'max:7168'],
+            'image' => ['nullable', 'mimes:jpg,jpeg,png,webp,avif', 'max:7168'],
             'status' => ['required', Rule::in(['draft', 'published'])],
             'accent_color' => ['nullable', 'string', 'max:20'],
             'content_attributes' => ['nullable'],

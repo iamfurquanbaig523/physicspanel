@@ -52,7 +52,7 @@ class CategoryController extends Controller {
 
         $rules = [
             "name.$defaultLangId" => 'required|string|max:120',
-            'image'              => 'nullable|mimes:jpg,jpeg,png,webp|max:7168',
+            'image'              => 'nullable|mimes:jpg,jpeg,png,webp,avif|max:7168',
             'parent_category_id' => 'nullable|integer',
             "description.$defaultLangId" => 'nullable|string',
             'series_title' => 'nullable|string|max:255',
@@ -264,7 +264,7 @@ class CategoryController extends Controller {
 
             $rules = [
                 "name.$defaultLangId" => 'required|string|max:120',
-                'image'           => 'nullable|mimes:jpg,jpeg,png,webp|max:7168',
+                'image'           => 'nullable|mimes:jpg,jpeg,png,webp,avif|max:7168',
                 'parent_category_id' => 'nullable|integer',
                 "description.$defaultLangId" => 'nullable|string',
                 'series_title' => 'nullable|string|max:255',
