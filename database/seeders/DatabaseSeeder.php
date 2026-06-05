@@ -17,8 +17,6 @@ class DatabaseSeeder extends Seeder
         $this->call([
             InstallationSeeder::class,
             SystemUpgradeSeeder::class,
-            SearchEngineBasicsArticleSeeder::class,
-            SearchEngineBasicsSiteSeeder::class,
         ]);
     }
 }

@@ -133,9 +133,9 @@ class SearchEngineBasicsSiteSeeder extends Seeder
         $homeMarkdown = $this->readFile($this->contentPath('search-engines-basics.md'));
 
         $settings = [
-            'company_name' => ['Search Engine Basics', 'string'],
-            'website_url' => ['https://searchenginebasics.io', 'string'],
-            'company_email' => ['hello@searchenginebasics.io', 'string'],
+            'company_name' => ['Physics Fundamentals', 'string'],
+            'website_url' => ['https://physicsfundamental.org', 'string'],
+            'company_email' => ['hello@physicsfundamental.org', 'string'],
             'google_site_verification' => ['vHzrzYvTLVaFa1uW5eOTfAb91sB6jXRJySFCcI_apfc', 'string'],
             'gtm_container_id' => ['GTM-P8LVQLT3', 'string'],
             'default_share_thumbnail' => [$thumbnail, 'file'],
@@ -159,9 +159,9 @@ class SearchEngineBasicsSiteSeeder extends Seeder
         SeoSetting::updateOrCreate(
             ['page' => 'home'],
             [
-                'title' => 'Search Engine Basics: A Step-by-Step SEO Guide for Beginners',
-                'description' => 'Master search engine basics — learn how crawling, indexing, and ranking work. Build your SEO Knowledge from beginner to expert. Your SEO marketing starts here.',
-                'keywords' => 'search engine basics, seo guide, crawling, indexing, ranking',
+                'title' => 'Physics Fundamentals: A Step-by-Step Guide from Mechanics to Quantum',
+                'description' => 'Master the fundamentals of physics, from classical mechanics and electromagnetism to relativity and quantum theory.',
+                'keywords' => 'physics fundamentals, learn physics, classical mechanics, quantum physics, relativity',
                 'image' => 'settings/Thumbnail.png',
             ]
         );
@@ -191,8 +191,8 @@ class SearchEngineBasicsSiteSeeder extends Seeder
                 'slug'               => 'search-engine-indexing',
                 'name'               => 'Indexing',
                 'series_title'       => 'Indexing',
-                'description'        => 'What happens after a page is crawled — and why some pages never make it into the index.',
-                'series_description' => 'What happens after a page is crawled — and why some pages never make it into the index.',
+                'description'        => 'What happens after a page is crawled â€” and why some pages never make it into the index.',
+                'series_description' => 'What happens after a page is crawled â€” and why some pages never make it into the index.',
                 'accent_color'       => '#b8ff35',
                 'icon'               => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>',
                 'status'             => true,
@@ -346,7 +346,7 @@ class SearchEngineBasicsSiteSeeder extends Seeder
 
     private function seedShareLinks(): void
     {
-        $siteUrl = rtrim(Setting::where('name', 'website_url')->value('value') ?: 'https://searchenginebasics.io', '/');
+        $siteUrl = rtrim(Setting::where('name', 'website_url')->value('value') ?: 'https://physicsfundamental.org', '/');
 
         Blog::with('seriesCategory')->where('status', 'published')->get()->each(function (Blog $blog) use ($siteUrl) {
             $path = $blog->seriesCategory?->slug
@@ -372,12 +372,12 @@ class SearchEngineBasicsSiteSeeder extends Seeder
         CompanyPage::updateOrCreate(
             ['page_key' => 'about-us'],
             [
-                'title' => 'About Search Engine Basics',
+                'title' => 'About Physics Fundamentals',
                 'slug' => 'about-us',
-                'excerpt' => 'Search Engine Basics is a free, structured guide library for understanding how search engines crawl, index, rank, and evaluate the web.',
-                'content' => '<p><strong>We teach you how search engines think, not just how to trick them.</strong></p><p>Most SEO content on the internet hands you a checklist. Put your keyword in the H1. Write a meta description under 160 characters. Get backlinks. Done.</p><p>But nobody explains why any of that works.</p><p>That\'s exactly the gap we built this site to fill.</p><h2>Who We Are</h2><p>We are a team of SEO practitioners, researchers, and educators who got tired of surface-level advice. We spent years studying how search engines actually work, the crawling, the indexing, the ranking signals, the algorithms — and we noticed something: people who understand the system never have to memorize tactics. The right moves become obvious.</p><p>So we built a place where that understanding comes first.</p><h2>What We Actually Teach</h2><p>Every piece of content on this site starts from the ground up. Before we tell you what to put in an H1 tag, we explain what an H1 tag actually communicates to a search engine and why it was designed that way. Before we talk about meta descriptions, we show you how a search result page works and what job the description is really doing.</p><p>By the time you finish reading our content, you will not just know what to do, you will know why it works, which means you can apply it to any situation, any niche, any website, without needing a new checklist every time Google updates its algorithm.</p><h2>What Makes Us Different</h2><ul><li><strong>We go foundational.</strong> Every article is built from first principles. No assumed knowledge, no jargon without explanation.</li><li><strong>We make it interactive.</strong> We do not just describe concepts, we show you how they behave, with real examples you can see and test yourself.</li><li><strong>We teach the system, not the shortcut.</strong> Shortcuts expire. System knowledge compounds. Our goal is to turn you into someone who understands search engines deeply enough to figure out any SEO challenge on your own.</li><li><strong>We cover the whys.</strong> Why does Google care about page speed? Why does keyword placement in a title matter? Why do some backlinks count and others do not? Every lesson answers the question underneath the question.</li></ul><h2>What You Will Walk Away With</h2><p>After going through our content, you will understand:</p><ul><li>How search engines crawl and index the web</li><li>Why certain HTML elements carry more weight than others</li><li>How to write title tags and meta descriptions that actually work, and why they work</li><li>What signals search engines use to decide which page deserves to rank</li><li>How to think about any SEO decision from a logical, system-level perspective</li></ul><p>You will not just be better at SEO. You will understand SEO, and that is something no algorithm update can take away from you.</p><h2>Our Promise</h2><p>We will never publish content that tells you what to do without explaining why. If we cover a topic, we cover it properly, from the foundation up, in plain language, with real examples.</p><p>Because we believe the internet deserves more people who actually understand how it works.</p><p>Welcome. Let\'s start from the beginning.</p>',
-                'meta_title' => 'About Search Engine Basics',
-                'meta_description' => 'Learn about Search Engine Basics, the free structured library for understanding crawling, indexing, ranking, search algorithms, and SEO fundamentals.',
+                'excerpt' => 'Physics Fundamentals is a free, structured guide library for learning physics from first principles.',
+                'content' => '<p><strong>We teach physics from the ground up.</strong></p><p>Physics Fundamentals is built for learners who want the ideas behind mechanics, fields, relativity, quantum theory, and mathematical physics to feel connected rather than memorized.</p><h2>What We Teach</h2><p>Every guide starts with the underlying principle, then builds toward the equations, examples, and intuition that make the topic useful.</p><h2>Our Promise</h2><p>We keep the explanations clear, rigorous, and free to read.</p>',
+                'meta_title' => 'About Physics Fundamentals',
+                'meta_description' => 'Learn about Physics Fundamentals, the free structured library for learning physics from first principles.',
                 'status' => true,
                 'published_at' => Carbon::parse(self::TODAY),
             ]

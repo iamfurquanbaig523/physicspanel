@@ -61,7 +61,7 @@
                     </div>
                     <div class="card-body">
                         <h5 class="title">{{ __('SEO Settings') }}</h5>
-                        <div>{{ __('Manage metadata for the Search Engine Basics site') }} <i class="fas fa-arrow-right mt-2 arrow_icon"></i></div>
+                        <div>{{ __('Manage metadata for the Physics Fundamentals site') }} <i class="fas fa-arrow-right mt-2 arrow_icon"></i></div>
                     </div>
                 </a>
             </div>

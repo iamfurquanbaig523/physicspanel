@@ -93,7 +93,7 @@
                                                         <option value="search-engine-crawling">{{ __('Search Engine Crawling') }}</option>
                                                         <option value="search-engine-indexing">{{ __('Search Engine Indexing') }}</option>
                                                         <option value="search-engine-ranking">{{ __('Search Engine Ranking') }}</option>
-                                                        <option value="search-engine-basics">{{ __('Search Engine Basics') }}</option>
+                                                        <option value="physics-fundamentals">{{ __('Physics Fundamentals') }}</option>
                                                         <option value="about-us">{{ __('About Us') }}</option>
                                                         <option value="contact-us">{{ __('Contact Us') }}</option>
                                                         <option value="privacy-policy">{{ __('Privacy Policy') }}</option>

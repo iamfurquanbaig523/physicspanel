@@ -28,10 +28,10 @@ return new class extends Migration
         $defaultAuthorId = DB::table('authors')->where('slug', 'search-engine-basics-team')->value('id');
         if (! $defaultAuthorId) {
             $defaultAuthorId = DB::table('authors')->insertGetId([
-                'name' => 'Search Engine Basics Team',
-                'slug' => 'search-engine-basics-team',
+                'name' => 'Physics Fundamentals Team',
+                'slug' => 'physics-fundamentals-team',
                 'role' => 'Editorial Team',
-                'bio' => 'The editorial team behind Search Engine Basics.',
+                'bio' => 'The editorial team behind Physics Fundamentals.',
                 'status' => true,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -132,15 +132,15 @@ return new class extends Migration
 
         DB::table('settings')->updateOrInsert(
             ['name' => 'company_name'],
-            ['value' => 'Search Engine Basics', 'type' => 'string']
+            ['value' => 'Physics Fundamentals', 'type' => 'string']
         );
         DB::table('settings')->updateOrInsert(
             ['name' => 'website_url'],
-            ['value' => 'https://searchenginebasics.io', 'type' => 'string']
+            ['value' => 'https://physicsfundamental.org', 'type' => 'string']
         );
         DB::table('settings')->updateOrInsert(
             ['name' => 'company_email'],
-            ['value' => 'hello@searchenginebasics.io', 'type' => 'string']
+            ['value' => 'hello@physicsfundamental.org', 'type' => 'string']
         );
     }
 
@@ -181,12 +181,12 @@ return new class extends Migration
         return [
             [
                 'page_key' => 'about-us',
-                'title' => 'About Search Engine Basics',
+                'title' => 'About Physics Fundamentals',
                 'slug' => 'about-us',
-                'excerpt' => 'Clear, practical education about how search engines discover, index, and rank the web.',
-                'content' => '<p>Search Engine Basics teaches the systems behind search: crawling, indexing, ranking, and the technical decisions that help pages become discoverable.</p><p>Our goal is to make SEO fundamentals easier to understand without turning them into vague checklists.</p>',
-                'meta_title' => 'About Search Engine Basics',
-                'meta_description' => 'Learn why Search Engine Basics exists and how it teaches SEO from first principles.',
+                'excerpt' => 'Clear, structured education about physics from first principles.',
+                'content' => '<p>Physics Fundamentals teaches the ideas behind mechanics, fields, relativity, quantum theory, and the mathematical language used to describe the universe.</p><p>Our goal is to make physics easier to understand without flattening the wonder or the rigor.</p>',
+                'meta_title' => 'About Physics Fundamentals',
+                'meta_description' => 'Learn why Physics Fundamentals exists and how it teaches physics from first principles.',
                 'status' => true,
                 'published_at' => now(),
             ],
@@ -194,10 +194,10 @@ return new class extends Migration
                 'page_key' => 'privacy-policy',
                 'title' => 'Privacy Policy',
                 'slug' => 'privacy-policy',
-                'excerpt' => 'How Search Engine Basics handles visitor messages, newsletter signups, and analytics data.',
-                'content' => '<p>Search Engine Basics collects only the information needed to respond to messages, manage newsletter subscriptions, and improve the learning experience.</p><p>You can contact us at hello@searchenginebasics.io for privacy questions.</p>',
-                'meta_title' => 'Privacy Policy | Search Engine Basics',
-                'meta_description' => 'Privacy information for Search Engine Basics visitors and subscribers.',
+                'excerpt' => 'How Physics Fundamentals handles visitor messages, newsletter signups, and analytics data.',
+                'content' => '<p>Physics Fundamentals collects only the information needed to respond to messages, manage newsletter subscriptions, and improve the learning experience.</p><p>You can contact us at hello@physicsfundamental.org for privacy questions.</p>',
+                'meta_title' => 'Privacy Policy | Physics Fundamentals',
+                'meta_description' => 'Privacy information for Physics Fundamentals visitors and subscribers.',
                 'status' => true,
                 'published_at' => now(),
             ],
@@ -205,21 +205,21 @@ return new class extends Migration
                 'page_key' => 'terms-and-conditions',
                 'title' => 'Terms and Conditions',
                 'slug' => 'terms-and-conditions',
-                'excerpt' => 'The basic terms for using Search Engine Basics content and learning resources.',
-                'content' => '<p>Search Engine Basics provides educational content for general learning. You are responsible for how you apply any advice to your own websites or projects.</p>',
-                'meta_title' => 'Terms and Conditions | Search Engine Basics',
-                'meta_description' => 'Terms for using Search Engine Basics.',
+                'excerpt' => 'The basic terms for using Physics Fundamentals content and learning resources.',
+                'content' => '<p>Physics Fundamentals provides educational content for general learning. You are responsible for how you apply the material in your own study, teaching, or projects.</p>',
+                'meta_title' => 'Terms and Conditions | Physics Fundamentals',
+                'meta_description' => 'Terms for using Physics Fundamentals.',
                 'status' => true,
                 'published_at' => now(),
             ],
             [
                 'page_key' => 'contact-us',
-                'title' => 'Contact Search Engine Basics',
+                'title' => 'Contact Physics Fundamentals',
                 'slug' => 'contact-us',
                 'excerpt' => 'Send questions, corrections, feedback, or collaboration ideas.',
                 'content' => '<p>Use the contact form to send questions, correction requests, article ideas, or partnership notes. We read every message.</p>',
-                'meta_title' => 'Contact Search Engine Basics',
-                'meta_description' => 'Contact Search Engine Basics with questions, feedback, and collaboration requests.',
+                'meta_title' => 'Contact Physics Fundamentals',
+                'meta_description' => 'Contact Physics Fundamentals with questions, feedback, and collaboration requests.',
                 'status' => true,
                 'published_at' => now(),
             ],

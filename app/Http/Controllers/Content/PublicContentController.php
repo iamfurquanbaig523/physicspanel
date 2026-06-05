@@ -33,15 +33,16 @@ class PublicContentController extends Controller
                 'gtm_container_id',
                 'default_share_thumbnail',
             ]);
-            $siteUrl = rtrim($settings['website_url'] ?: 'https://searchenginebasics.io', '/');
+            $siteUrl = rtrim($settings['website_url'] ?: 'https://physicsfundamental.org', '/');
+            $domain = parse_url($siteUrl, PHP_URL_HOST) ?: 'physicsfundamental.org';
 
             return [
                 'error' => false,
                 'data' => [
-                    'brand_name' => $settings['company_name'] ?: 'Search Engine Basics',
-                    'domain' => 'searchenginebasics.io',
+                    'brand_name' => $settings['company_name'] ?: 'Physics Fundamentals',
+                    'domain' => preg_replace('/^www\./', '', $domain),
                     'site_url' => $siteUrl,
-                    'contact_email' => $settings['company_email'] ?: 'hello@searchenginebasics.io',
+                    'contact_email' => $settings['company_email'] ?: 'hello@physicsfundamental.org',
                     'google_site_verification' => $settings['google_site_verification'] ?: config('services.google.site_verification'),
                     'gtm_container_id' => $settings['gtm_container_id'] ?: config('services.google.gtm_container_id'),
                     'default_thumbnail' => $settings['default_share_thumbnail'],

@@ -6,7 +6,7 @@
                     <a href="{{ url('home') }}">
                         <img src="{{ $company_logo ?? '' }}"
                              data-custom-image="{{ url('assets/images/logo/sidebar_logo.png') }}"
-                             alt="Search Engine Basics">
+                             alt="Physics Fundamentals">
                     </a>
                 </div>
             </div>
